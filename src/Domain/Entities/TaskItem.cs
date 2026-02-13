@@ -11,7 +11,7 @@ namespace Domain.Entities
     {
         public Guid TaskId { get; set; }
         public string Title { get; set; } = null!;
-        public string Description { get; set; } = null!;
+        public string? Description { get; set; }
         public TaskState State { get; set; }
         public TaskPriority Priority { get; set; }
 
