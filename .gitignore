@@ -11,4 +11,5 @@
 # Secretos y configuración local (MUY IMPORTANTE)
 appsettings.Development.json
 appsettings.Local.json
+appsettings.json
 .env
