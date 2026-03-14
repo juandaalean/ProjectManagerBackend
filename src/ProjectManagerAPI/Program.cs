@@ -1,7 +1,6 @@
 using Application.DependencyInjection;
-using Infrastructure.Data;
 using Infrastructure.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
+using ProjectManagerAPI;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddControllers();
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -23,5 +23,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+app.MapControllers();
 
 app.Run();

@@ -54,3 +54,21 @@ Whenever I ask you for new functionality, follow these steps:
 ## Specialized Reviewers (Skills)
 - **Code Style:** Use `./.agents/skills/dotnet-best-practices/SKILL.md`.
 - **Architecture & Patterns:** Use `./.agents/skills/dotnet-design-pattern-review/SKILL.md` to review any new service or complex logic.
+
+## Pull Request Standards
+- When creating a Pull Request via GitHub MCP, ALWAYS use the following template format:
+
+# PR template
+## 🧩 What I do
+- [Agent: Summarize the main goal of the task in 1-2 sentences]
+
+## 🔄 Main changes
+- [Agent: Provide a bulleted list of technical changes, files created, or refactors]
+
+## 🧪 How to try it
+- [Agent: Provide step-by-step instructions to verify the changes, including commands like 'dotnet build' or specific endpoints]
+
+## 📸 Evidence
+- [Agent: Mention that it is a 'Code-generated PR' and include any relevant logs from the terminal verification]
+
+- Before creating a PR, the agent must run dotnet build and ensure it passes. If it fails, do not create the PR and report the errors first.
