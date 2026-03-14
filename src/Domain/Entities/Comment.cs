@@ -9,12 +9,12 @@ namespace Domain.Entities
     {
         public Guid CommentId { get; set; }
         public string Content { get; set; } = null!;
-        public DateTime Date { get; set; }
+        public DateTime CreateAt { get; set; }
 
         public Guid UserId { get; set; }
         public User User { get; set; } = null!;
 
         public Guid TaskId { get; set; }
-        public Task Task { get; set; } = null!;
+        public TaskItem Task { get; set; } = null!;
     }
 }

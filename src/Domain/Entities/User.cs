@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
 using Domain.Enum;
 
 namespace Domain.Entities
@@ -15,8 +10,8 @@ namespace Domain.Entities
         public string PasswordHash { get; set; } = null!;
         public UserRol Rol { get; set; }
 
-        public ICollection<UserProject> UserProjects {get; set;} = [];
-        public ICollection<TaskItem> AssignedTasks {get; set;} = [];
-        public ICollection<Comment> Comments {get; set;} = [];
+        public ICollection<UserProject> UserProjects {get; set;} = new List<UserProject>();
+        public ICollection<TaskItem> AssignedTasks {get; set;} = new List<TaskItem>();
+        public ICollection<Comment> Comments {get; set;} = new List<Comment>();
     }
 }

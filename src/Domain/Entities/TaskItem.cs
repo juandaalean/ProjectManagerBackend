@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Threading.Tasks;
 using Domain.Enum;
 
 namespace Domain.Entities
@@ -19,8 +14,8 @@ namespace Domain.Entities
         public Project Project { get; set; } = null!;
 
         public Guid AssignedUserId { get; set; }
-        public User User { get; set; } = null!;
+        public User AssignedUser { get; set; } = null!;
 
-        public ICollection<Comment> Comments { get; set; } = [];
+        public ICollection<Comment> Comments { get; set; } = new List<Comment>();
     }
 }
