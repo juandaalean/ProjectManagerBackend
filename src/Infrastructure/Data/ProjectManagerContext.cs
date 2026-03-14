@@ -1,7 +1,7 @@
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace Infrastructure.data
+namespace Infrastructure.Data
 {
     public class ProjectManagerContext : DbContext
     {

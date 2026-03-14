@@ -2,7 +2,7 @@ using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Infrastructure.configuration
+namespace Infrastructure.Configuration
 {
     public class TaskItemConfiguration : IEntityTypeConfiguration<TaskItem>
     {
