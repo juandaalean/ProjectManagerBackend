@@ -1,8 +1,8 @@
-using Application.Abstractions;
-using Application.DTOs;
+using Domain.Abstractions;
 using Application.Exceptions;
 using Domain.Entities;
 using Domain.Enum;
+using Application.DTOs.Projects;
 
 namespace Application.Services;
 

@@ -30,6 +30,10 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
         {
             await HandleExceptionAsync(context, ex, StatusCodes.Status403Forbidden, "Forbidden");
         }
+        catch (UnauthorizedException ex)
+        {
+            await HandleExceptionAsync(context, ex, StatusCodes.Status401Unauthorized, "Unauthorized");
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "An unhandled exception occurred.");

@@ -1,6 +1,6 @@
 using Domain.Enum;
 
-namespace Application.DTOs;
+namespace Application.DTOs.Projects;
 
 /// <summary>
 /// Request DTO for adding a member to a project.
