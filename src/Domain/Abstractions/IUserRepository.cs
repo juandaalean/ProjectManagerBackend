@@ -1,6 +1,6 @@
 using Domain.Entities;
 
-namespace Application.Abstractions;
+namespace Domain.Abstractions;
 
 /// <summary>
 /// Repository interface for managing User entities.
