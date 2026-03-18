@@ -1,6 +1,9 @@
-using Application.DTOs;
+using Application.DTOs.Projects;
+using Application.Exceptions;
 using Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ProjectManagerAPI.Controllers;
 
@@ -9,6 +12,7 @@ namespace ProjectManagerAPI.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/projects")]
+[Authorize]
 public class ProjectsController(IProjectService projectService) : ControllerBase
 {
     /// <summary>
@@ -20,7 +24,7 @@ public class ProjectsController(IProjectService projectService) : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ProjectDto>>> GetProjects([FromQuery] ListProjectsQuery? query, CancellationToken cancellationToken)
     {
-        var actorUserId = Guid.Parse("12345678-1234-1234-1234-123456789abc");
+        var actorUserId = GetActorUserId();
         var projects = await projectService.ListProjectsForUserAsync(actorUserId, query, cancellationToken);
         return Ok(projects);
     }
@@ -34,7 +38,7 @@ public class ProjectsController(IProjectService projectService) : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ProjectDto>> CreateProject([FromBody] CreateProjectRequest request, CancellationToken cancellationToken)
     {
-        var actorUserId = Guid.Parse("12345678-1234-1234-1234-123456789abc");
+        var actorUserId = GetActorUserId();
         var project = await projectService.CreateProjectAsync(request, actorUserId, cancellationToken);
         return CreatedAtAction(nameof(GetProjects), new { id = project.ProjectId }, project);
     }
@@ -49,7 +53,7 @@ public class ProjectsController(IProjectService projectService) : ControllerBase
     [HttpPut("{id}")]
     public async Task<ActionResult<ProjectDto>> UpdateProject(Guid id, [FromBody] UpdateProjectRequest request, CancellationToken cancellationToken)
     {
-        var actorUserId = Guid.Parse("12345678-1234-1234-1234-123456789abc");
+        var actorUserId = GetActorUserId();
         var project = await projectService.UpdateProjectAsync(id, request, actorUserId, cancellationToken);
         return Ok(project);
     }
@@ -63,8 +67,19 @@ public class ProjectsController(IProjectService projectService) : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteProject(Guid id, CancellationToken cancellationToken)
     {
-        var actorUserId = Guid.Parse("12345678-1234-1234-1234-123456789abc");
+        var actorUserId = GetActorUserId();
         await projectService.DeleteProjectAsync(id, actorUserId, cancellationToken);
         return NoContent();
+    }
+
+    private Guid GetActorUserId()
+    {
+        var nameIdentifier = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(nameIdentifier, out var actorUserId))
+        {
+            throw new UnauthorizedException("User token is missing a valid identifier claim.");
+        }
+
+        return actorUserId;
     }
 }

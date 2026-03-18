@@ -1,4 +1,4 @@
-namespace Application.DTOs;
+namespace Application.DTOs.Projects;
 
 /// <summary>
 /// Request DTO for updating an existing project.
