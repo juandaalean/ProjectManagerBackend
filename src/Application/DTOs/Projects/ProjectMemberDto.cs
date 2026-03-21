@@ -1,6 +1,6 @@
 using Domain.Enum;
 
-namespace Application.DTOs;
+namespace Application.DTOs.Projects;
 
 /// <summary>
 /// Response DTO for project member information.

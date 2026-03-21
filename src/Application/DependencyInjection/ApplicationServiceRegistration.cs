@@ -16,6 +16,7 @@ public static class ApplicationServiceRegistration
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddScoped<IProjectService, ProjectService>();
+        services.AddScoped<IAuthService, AuthService>();
 
         return services;
     }

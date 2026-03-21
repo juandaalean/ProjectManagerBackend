@@ -1,4 +1,4 @@
-namespace Application.Abstractions;
+namespace Domain.Abstractions;
 
 /// <summary>
 /// Represents a unit of work for managing database transactions.
