@@ -109,6 +109,32 @@ src/
 - **Test**: No tests implemented yet. Add unit and integration tests in a future `Tests` project.
 - **Migrations**: Add new migrations with `dotnet ef migrations add <Name> --project src/Infrastructure --startup-project src/ProjectManagerAPI`
 
+## Development Tools and Automation
+
+This project leverages advanced development tools and automation to enhance productivity, code quality, and collaboration:
+
+### Agents and Skills
+- **AI Agents**: The project uses specialized AI agents (e.g., GitHub Copilot) configured with custom skills for .NET best practices, design pattern reviews, and effective README crafting. These agents assist in code generation, refactoring, and ensuring adherence to project standards.
+- **Skill-Based Guidance**: Skills are stored in `.agents/skills/` and provide domain-specific knowledge. For example:
+  - `dotnet-best-practices`: Ensures code meets .NET standards.
+  - `dotnet-design-pattern-review`: Reviews and suggests improvements for design patterns.
+  - `crafting-effective-readmes`: Guides the creation of professional documentation.
+
+### MCP Servers
+- **Microsoft Learn MCP**: Used for accessing up-to-date Microsoft documentation and code samples. This server provides authoritative content for .NET, Azure, and related technologies, ensuring accurate implementation.
+- **GitHub MCP**: Facilitates repository management, including issue tracking, pull request handling, and automated code reviews. It supports delegation of tasks to Copilot for code generation and PR creation.
+
+### GitHub Automation
+- **Pull Request Automation**: Follows a standardized PR template for consistency. Agents can delegate tasks to GitHub Copilot for automated implementation and PR creation.
+- **Code Reviews**: Automated reviews using Copilot to ensure code quality before human review.
+- **CI/CD**: Integrated with GitHub Actions (see `.github/workflows/dotnet.yml`) for automated builds, tests, and deployments.
+- **Branch Management**: Uses feature branches and follows Git flow for collaborative development.
+
+To learn more about these tools:
+- Explore the `.agents/skills/` directory for skill definitions.
+- Refer to MCP documentation for server usage.
+- Check GitHub repository settings and workflows for automation details.
+
 ## Contributing
 
 Contributions are welcome! Please follow these steps:
@@ -121,12 +147,7 @@ Contributions are welcome! Please follow these steps:
 
 Ensure code follows the project's best practices as defined in `.agents/skills/dotnet-best-practices/SKILL.md`.
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## Acknowledgments
 
 - Built following Clean Architecture principles.
 - Inspired by domain-driven design and best practices in .NET development.</content>
-<parameter name="filePath">/home/juanda/Documents/ProjectManagerBackend/README.md
