@@ -1,4 +1,5 @@
 using Application.Services;
+using Application.Services.TaskItemServices;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Application.DependencyInjection;
@@ -17,6 +18,7 @@ public static class ApplicationServiceRegistration
     {
         services.AddScoped<IProjectService, ProjectService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<ITaskItemService, TaskItemService>();
 
         return services;
     }

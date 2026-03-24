@@ -1,4 +1,5 @@
 using Application.DTOs.Projects;
+using Domain.Enum;
 
 namespace Application.Services;
 
@@ -78,5 +79,5 @@ public interface IProjectService
     /// <param name="role">The new role.</param>
     /// <param name="actorUserId">The ID of the user performing the action.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    Task UpdateMemberRoleAsync(Guid projectId, Guid userId, Domain.Enum.UserRol role, Guid actorUserId, CancellationToken cancellationToken = default);
+    Task UpdateMemberRoleAsync(Guid projectId, Guid userId, UserRol role, Guid actorUserId, CancellationToken cancellationToken = default);
 }
