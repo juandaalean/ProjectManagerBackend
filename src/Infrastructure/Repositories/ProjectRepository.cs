@@ -20,11 +20,33 @@ public class ProjectRepository(ProjectManagerContext context) : IProjectReposito
         return await context.Projects.FindAsync([id], cancellationToken);
     }
 
-    public async Task<IEnumerable<Project>> ListByUser(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Project>> ListByUser(
+        Guid userId,
+        ProjectListFilter? filter = null,
+        CancellationToken cancellationToken = default)
     {
-        return await context.Projects
-            .Where(p => p.OwnerId == userId)
-            .ToListAsync(cancellationToken);
+        var query = context.Projects
+            .Where(p => p.OwnerId == userId || p.UserProjects.Any(up => up.UserId == userId));
+
+        if (filter is not null)
+        {
+            if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
+            {
+                query = query.Where(p => EF.Functions.ILike(p.Name, $"%{filter.SearchTerm}%"));
+            }
+
+            if (filter.StartDateFrom.HasValue)
+            {
+                query = query.Where(p => p.StartDate >= filter.StartDateFrom.Value);
+            }
+
+            if (filter.StartDateTo.HasValue)
+            {
+                query = query.Where(p => p.StartDate <= filter.StartDateTo.Value);
+            }
+        }
+
+        return await query.ToListAsync(cancellationToken);
     }
 
     public void Update(Project project)

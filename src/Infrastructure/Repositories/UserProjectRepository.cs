@@ -32,4 +32,12 @@ public class UserProjectRepository(ProjectManagerContext context) : IUserProject
             .Where(up => up.ProjectId == projectId)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IEnumerable<UserProject>> ListByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await context.UserProjects
+            .Include(up => up.Project)
+            .Where(up => up.UserId == userId)
+            .ToListAsync(cancellationToken);
+    }
 }

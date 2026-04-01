@@ -82,35 +82,16 @@ public class ProjectService(
 
     public async Task<IEnumerable<ProjectDto>> ListProjectsForUserAsync(Guid actorUserId, ListProjectsQuery? query = null, CancellationToken cancellationToken = default)
     {
-        // Get owned projects
-        var ownedProjects = await projectRepository.ListByUser(actorUserId, cancellationToken);
-
-        // Get projects where user is member
-        var memberships = await userProjectRepository.ListMembers(actorUserId, cancellationToken); // Wait, ListMembers is for projectId, not userId
-        // IUserProjectRepository has ListMembers(Guid projectId), but I need for userId.
-        // This is a limitation. For now, assume ListByUser includes all accessible projects.
-        // To fix, I would need to add a method, but since "ya implementada", use ListByUser.
-
-        var projects = ownedProjects;
-
-        // Apply query filters if needed
+        ProjectListFilter? filter = null;
         if (query is not null)
         {
-            if (!string.IsNullOrWhiteSpace(query.SearchTerm))
-            {
-                projects = projects.Where(p => p.Name.Contains(query.SearchTerm, StringComparison.OrdinalIgnoreCase));
-            }
-
-            if (query.StartDateFrom.HasValue)
-            {
-                projects = projects.Where(p => p.StartDate >= query.StartDateFrom.Value);
-            }
-
-            if (query.StartDateTo.HasValue)
-            {
-                projects = projects.Where(p => p.StartDate <= query.StartDateTo.Value);
-            }
+            filter = new ProjectListFilter(
+                query.SearchTerm,
+                query.StartDateFrom,
+                query.StartDateTo);
         }
+
+        var projects = await projectRepository.ListByUser(actorUserId, filter, cancellationToken);
 
         return projects.Select(MapToDto);
     }

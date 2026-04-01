@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Application.DTOs.TaskItem;
 using Application.Exceptions;
 using Domain.Abstractions;
@@ -119,7 +115,7 @@ public class TaskItemService(
         return MapToDto(taskItem);
     }
 
-    public async Task<IEnumerable<TaskItemDto>> ListTaskItemsInProjectAsync(Guid projectId, Guid actionUserId, ListTaskItemsQuery? query = null, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TaskItemDto>> ListTaskItemsInProjectAsync(Guid projectId, Guid actorUserId, ListTaskItemsQuery? query = null, CancellationToken cancellationToken = default)
     {
         if (projectId == Guid.Empty)
         {
@@ -132,39 +128,26 @@ public class TaskItemService(
             throw new NotFoundException("Project not found.");
         }
 
-        if (project.OwnerId != actionUserId)
+        if (project.OwnerId != actorUserId)
         {
-            var membership = await userProjectRepository.GetMembership(actionUserId, projectId, cancellationToken);
+            var membership = await userProjectRepository.GetMembership(actorUserId, projectId, cancellationToken);
             if (membership is null)
             {
                 throw new ForbiddenException("Access denied.");
             }
         }
 
-        var tasks = await taskItemRepository.ListByProject(projectId, cancellationToken);
-
+        TaskItemListFilter? filter = null;
         if (query is not null)
         {
-            if (!string.IsNullOrWhiteSpace(query.SearchTerm))
-            {
-                tasks = tasks.Where(t => t.Title.Contains(query.SearchTerm, StringComparison.OrdinalIgnoreCase));
-            }
-
-            if (query.TaskState.HasValue)
-            {
-                tasks = tasks.Where(t => t.State == query.TaskState.Value);
-            }
-
-            if (query.TaskPriority.HasValue)
-            {
-                tasks = tasks.Where(t => t.Priority == query.TaskPriority.Value);
-            }
-
-            if (query.AssignedUser.HasValue)
-            {
-                tasks = tasks.Where(t => t.AssignedUserId == query.AssignedUser.Value);
-            }
+            filter = new TaskItemListFilter(
+                query.SearchTerm,
+                query.TaskState,
+                query.TaskPriority,
+                query.AssignedUser);
         }
+
+        var tasks = await taskItemRepository.ListByProject(projectId, filter, cancellationToken);
 
         return tasks.Select(MapToDto);
     }
@@ -326,7 +309,9 @@ public class TaskItemService(
         taskItem.Title,
         taskItem.Description,
         taskItem.State,
-        taskItem.Priority
+        taskItem.Priority,
+        taskItem.ProjectId,
+        taskItem.AssignedUserId
     );
 
 }
