@@ -35,4 +35,12 @@ public interface IUserProjectRepository
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A collection of user-project relationships.</returns>
     Task<IEnumerable<UserProject>> ListMembers(Guid projectId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves all project memberships for a user.
+    /// </summary>
+    /// <param name="userId">The user ID.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A collection of user-project relationships.</returns>
+    Task<IEnumerable<UserProject>> ListByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 }
