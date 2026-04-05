@@ -1,4 +1,5 @@
 using Application.Services;
+using Application.Services.CommentServices;
 using Application.Services.TaskItemServices;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,6 +20,7 @@ public static class ApplicationServiceRegistration
         services.AddScoped<IProjectService, ProjectService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ITaskItemService, TaskItemService>();
+        services.AddScoped<ICommentService, CommentService>();
 
         return services;
     }
