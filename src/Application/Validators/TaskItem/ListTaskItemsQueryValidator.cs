@@ -3,9 +3,6 @@ using FluentValidation;
 
 namespace Application.Validators.TaskItem;
 
-/// <summary>
-/// Validator for list-tasks query filters.
-/// </summary>
 public class ListTaskItemsQueryValidator : AbstractValidator<ListTaskItemsQuery>
 {
     /// <summary>

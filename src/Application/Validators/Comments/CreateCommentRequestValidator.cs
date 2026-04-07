@@ -3,9 +3,6 @@ using FluentValidation;
 
 namespace Application.Validators.Comments;
 
-/// <summary>
-/// Validator for comment creation requests.
-/// </summary>
 public class CreateCommentRequestValidator : AbstractValidator<CreateCommentRequest>
 {
     /// <summary>

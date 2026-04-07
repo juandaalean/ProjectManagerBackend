@@ -3,9 +3,6 @@ using FluentValidation;
 
 namespace Application.Validators.Projects;
 
-/// <summary>
-/// Validator for project creation requests.
-/// </summary>
 public class CreateProjectRequestValidator : AbstractValidator<CreateProjectRequest>
 {
     /// <summary>

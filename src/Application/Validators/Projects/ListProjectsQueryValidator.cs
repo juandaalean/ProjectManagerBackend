@@ -3,9 +3,6 @@ using FluentValidation;
 
 namespace Application.Validators.Projects;
 
-/// <summary>
-/// Validator for list-projects query filters.
-/// </summary>
 public class ListProjectsQueryValidator : AbstractValidator<ListProjectsQuery>
 {
     /// <summary>

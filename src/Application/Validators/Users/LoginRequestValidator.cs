@@ -3,9 +3,6 @@ using FluentValidation;
 
 namespace Application.Validators.Users;
 
-/// <summary>
-/// Validator for user login requests.
-/// </summary>
 public class LoginRequestValidator : AbstractValidator<LoginRequest>
 {
     /// <summary>

@@ -1,9 +1,12 @@
 # Project Manager Backend
 
-A backend API built with .NET 8 and ASP.NET Core for managing projects and tasks.
-The solution follows Clean Architecture with clear layer separation (Domain, Application, Infrastructure, API).
+A real-world project to reinforce knowledge in software development, architectures, and clean architecture, also integrating the use of AI through MCP servers and tools like OpenCode to adapt to the new development paradigm with AI.
+Also looking to delve a little deeper into DevOps and application deployment
 
-> Last updated: 2026-04-03
+A backend API built with .NET 8 and ASP.NET Core for managing projects and tasks.
+The solution follows Clean Architecture (monolith) with clear layer separation (Domain, Application, Infrastructure, API) and SOLID principles.
+
+> Last Changes: 2026-04
 
 ## Features
 
@@ -13,8 +16,6 @@ The solution follows Clean Architecture with clear layer separation (Domain, App
 - **Authentication**: JWT Bearer authentication (Swagger supports Bearer tokens).
 - **Database**: Entity Framework Core + PostgreSQL.
 - **Error Handling**: Custom exception middleware for consistent API responses.
-
-## Recent Changes (2026-04)
 
 - Implemented task comments endpoints (list + create) under project tasks.
 - Added comment DTOs, service layer, repository interface, and EF Core repository implementation.
@@ -110,6 +111,60 @@ src/
 └── ProjectManagerAPI/      # ASP.NET Core Web API (controllers, Program.cs)
 ```
 
+## System Diagram (Current)
+
+```mermaid
+flowchart TD
+  Client[Client App / Swagger / Postman]
+
+  subgraph API[ProjectManagerAPI]
+    Program[Program.cs\nDI + Middleware + Auth]
+    Controllers[Controllers\nAuth / Projects / TaskItem / TaskComments]
+    Middleware[ExceptionHandlingMiddleware\nproblem+json responses]
+    Program --> Controllers
+    Program --> Middleware
+  end
+
+  subgraph App[Application Layer]
+    Services[Services\nAuthService / ProjectService / TaskItemService / CommentService]
+    DTOs[DTOs + Validators\nFluentValidation]
+  end
+
+  subgraph Security[Security Layer]
+    TokenService[JwtTokenService]
+    PasswordHasher[AspNetPasswordHasher]
+    JwtOptions[JwtOptions]
+  end
+
+  subgraph Domain[Domain Layer]
+    Entities[Entities\nUser / Project / TaskItem / Comment / UserProject]
+    Abstractions[Repository Abstractions\nIProjectRepository / ITaskItemRepository / IUserRepository / ...]
+    Enums[Enums\nTaskState / TaskPriority / UserRol]
+  end
+
+  subgraph Infra[Infrastructure Layer]
+    DbContext[ProjectManagerContext]
+    Repositories[Repositories\nProject / TaskItem / Comment / User / UserProject]
+    Config[EF Configurations + Migrations]
+    Db[(PostgreSQL)]
+    DbContext --> Repositories
+    Repositories --> Db
+    Config --> DbContext
+  end
+
+  Client -->|HTTP + JWT| Controllers
+  Controllers --> Services
+  Controllers --> DTOs
+  Services --> Abstractions
+  Services --> Entities
+  Services --> Enums
+  Services --> TokenService
+  Services --> PasswordHasher
+  TokenService --> JwtOptions
+  Abstractions --> Repositories
+  Repositories --> DbContext
+```
+
 ## Development
 
 - Restore: `dotnet restore ProjectManagerAPI.sln`
@@ -124,14 +179,20 @@ src/
 - **Historial / Audit Log**: Add a history entity to register user actions within a project (who/what/when).
 - **Frontend**: Implement a frontend client (auth, projects, tasks, comments).
 - **CORS + HTTPS**: Add CORS policies for frontend origins and ensure correct local/prod HTTPS behavior.
-- **Docker**: Prepare container to deploy the backend to live production
+- **FastAPI microservice**: In the future, I want to create a small microservice to implement AI (like a chatbot or something similar) in this project using Python FastAPI to practice microservices architecture.
+- **Docker**: Prepare container to deploy the backend to live production.
+- **Render**: Backend deploy platform.
 
 ## Development Tools and Automation
 
 - Skills live under `.agents/skills/` (e.g., .NET best practices, design pattern review, README guidance).
+- PR generation and revitions via Github MCP server
+- Apply direct guide and learning of the Microsoft Learn MCP server
 - CI/CD via GitHub Actions: `.github/workflows/dotnet.yml`.
 
 ## Contributing
+
+If you are interested in creating new modules for this small project, you are welcome to contribute!
 
 1. Fork the repository.
 2. Create a feature branch (`git checkout -b feature/YourFeature`).
@@ -142,3 +203,4 @@ src/
 ## Acknowledgments
 
 - Built following Clean Architecture principles.
+- Automation in AI systems and study methods using MCP servers to improve study methods and knowledge

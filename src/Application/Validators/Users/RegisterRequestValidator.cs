@@ -2,10 +2,6 @@ using Application.DTOs.Users;
 using FluentValidation;
 
 namespace Application.Validators.Users;
-
-/// <summary>
-/// Validator for user registration requests.
-/// </summary>
 public class RegisterRequestValidator : AbstractValidator<RegisterRequest>
 {
     /// <summary>

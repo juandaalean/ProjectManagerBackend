@@ -3,9 +3,6 @@ using FluentValidation;
 
 namespace Application.Validators.Projects;
 
-/// <summary>
-/// Validator for add-member requests.
-/// </summary>
 public class AddProjectMemberRequestValidator : AbstractValidator<AddProjectMemberRequest>
 {
     /// <summary>

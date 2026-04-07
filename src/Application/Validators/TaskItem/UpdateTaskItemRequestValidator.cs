@@ -3,9 +3,6 @@ using FluentValidation;
 
 namespace Application.Validators.TaskItem;
 
-/// <summary>
-/// Validator for task update requests.
-/// </summary>
 public class UpdateTaskItemRequestValidator : AbstractValidator<UpdateTaskItemRequest>
 {
     /// <summary>
