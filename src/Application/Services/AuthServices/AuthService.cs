@@ -1,4 +1,3 @@
-using System.Net.Mail;
 using Application.DTOs.Users;
 using Application.Exceptions;
 using Application.Security;
@@ -24,21 +23,9 @@ public class AuthService(
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var name = request.Name?.Trim();
+        var name = request.Name.Trim();
         var email = NormalizeEmail(request.Email);
         var password = request.Password;
-
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new ValidationException("Name is required.");
-        }
-
-        if (!IsValidEmail(email))
-        {
-            throw new ValidationException("A valid email is required.");
-        }
-
-        ValidatePassword(password);
 
         var emailExists = await userRepository.EmailExists(email, cancellationToken);
         if (emailExists)
@@ -70,11 +57,6 @@ public class AuthService(
         var email = NormalizeEmail(request.Email);
         var password = request.Password;
 
-        if (!IsValidEmail(email) || string.IsNullOrWhiteSpace(password))
-        {
-            throw new UnauthorizedException(InvalidCredentialsMessage);
-        }
-
         var user = await userRepository.GetByEmail(email, cancellationToken);
         if (user is null)
         {
@@ -101,39 +83,8 @@ public class AuthService(
             new AuthUserDto(user.UserId, user.Name, user.Email, user.Rol.ToString()));
     }
 
-    private static void ValidatePassword(string password)
-    {
-        if (string.IsNullOrWhiteSpace(password))
-        {
-            throw new ValidationException("Password is required.");
-        }
-
-        if (password.Length < 8)
-        {
-            throw new ValidationException("Password must have at least 8 characters.");
-        }
-    }
-
     private static string NormalizeEmail(string email)
     {
         return email?.Trim().ToLowerInvariant() ?? string.Empty;
-    }
-
-    private static bool IsValidEmail(string email)
-    {
-        if (string.IsNullOrWhiteSpace(email))
-        {
-            return false;
-        }
-
-        try
-        {
-            _ = new MailAddress(email);
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
     }
 }

@@ -23,16 +23,6 @@ public class TaskItemService(
 
         ArgumentNullException.ThrowIfNull(request);
 
-        if (string.IsNullOrWhiteSpace(request.Title))
-        {
-            throw new ValidationException("Task title is required.");
-        }
-
-        if (request.AssignedUserId == Guid.Empty)
-        {
-            throw new ValidationException("Assigned user ID is required.");
-        }
-
         var project = await projectRepository.GetById(projectId, cancellationToken);
         if (project is null)
         {
@@ -203,22 +193,12 @@ public class TaskItemService(
 
         if (request.AssignedUserId.HasValue)
         {
-            if (request.AssignedUserId.Value == Guid.Empty)
-            {
-                throw new ValidationException("Assigned user ID is invalid.");
-            }
-
             await EnsureUserCanBeAssignedAsync(project, request.AssignedUserId.Value, cancellationToken);
             taskItem.AssignedUserId = request.AssignedUserId.Value;
         }
 
         if (request.Title is not null)
         {
-            if (string.IsNullOrWhiteSpace(request.Title))
-            {
-                throw new ValidationException("Task title is required.");
-            }
-
             taskItem.Title = request.Title;
         }
 
