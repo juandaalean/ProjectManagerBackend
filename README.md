@@ -180,6 +180,7 @@ flowchart TD
 - **Frontend**: Implement a frontend client (auth, projects, tasks, comments).
 - **CORS + HTTPS**: Add CORS policies for frontend origins and ensure correct local/prod HTTPS behavior.
 - **FastAPI microservice**: In the future, I want to create a small microservice to implement AI (like a chatbot or something similar) in this project using Python FastAPI to practice microservices architecture.
+- **Tests**: Unit test, integration test, deep learning and study about test using xUnit, moq and more test tools
 - **Docker**: Prepare container to deploy the backend to live production.
 - **Render**: Backend deploy platform.
 
