@@ -19,17 +19,6 @@ public class ProjectService(
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        // Validate request
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            throw new ValidationException("Project name is required.");
-        }
-
-        if (request.StartDate > request.EndDate)
-        {
-            throw new ValidationException("Start date must be before or equal to end date.");
-        }
-
         // Check if user exists
         var user = await userRepository.GetById(actorUserId, cancellationToken);
         if (user is null)
@@ -118,14 +107,8 @@ public class ProjectService(
             throw new ForbiddenException("Only the project owner can update the project.");
         }
 
-        // Validate request
-        if (request.StartDate.HasValue && request.EndDate.HasValue && request.StartDate.Value > request.EndDate.Value)
-        {
-            throw new ValidationException("Start date must be before or equal to end date.");
-        }
-
         // Update fields
-        if (!string.IsNullOrWhiteSpace(request.Name))
+        if (request.Name is not null)
         {
             project.Name = request.Name;
         }
@@ -181,11 +164,6 @@ public class ProjectService(
         if (projectId == Guid.Empty)
         {
             throw new ValidationException("Project ID is required.");
-        }
-
-        if (request.UserId == Guid.Empty)
-        {
-            throw new ValidationException("User ID is required.");
         }
 
         var project = await projectRepository.GetById(projectId, cancellationToken);

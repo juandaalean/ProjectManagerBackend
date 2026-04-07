@@ -1,6 +1,7 @@
 using Application.Services;
 using Application.Services.CommentServices;
 using Application.Services.TaskItemServices;
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Application.DependencyInjection;
@@ -17,6 +18,8 @@ public static class ApplicationServiceRegistration
     /// <returns>The service collection with application services added.</returns>
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
+        services.AddValidatorsFromAssembly(typeof(ApplicationServiceRegistration).Assembly);
+
         services.AddScoped<IProjectService, ProjectService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ITaskItemService, TaskItemService>();

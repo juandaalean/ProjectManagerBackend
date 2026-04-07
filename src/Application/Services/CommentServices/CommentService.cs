@@ -86,11 +86,6 @@ public class CommentService(
 
         ArgumentNullException.ThrowIfNull(request);
 
-        if (string.IsNullOrWhiteSpace(request.Content))
-        {
-            throw new ValidationException("Comment content is required.");
-        }
-
         var project = await projectRepository.GetById(projectId, cancellationToken);
         if (project is null)
         {
