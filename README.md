@@ -1,153 +1,207 @@
 # Project Manager Backend
 
-A robust and scalable backend API built with .NET 8 and ASP.NET Core for managing projects, users, tasks, and comments. This project follows a clean architecture pattern with layered separation of concerns, ensuring maintainability and extensibility.
+A real-world project to reinforce knowledge in software development, architectures, and clean architecture, also integrating the use of AI through MCP servers and tools like OpenCode to adapt to the new development paradigm with AI.
+Also looking to delve a little deeper into DevOps and application deployment
+
+A backend API built with .NET 8 and ASP.NET Core for managing projects and tasks.
+The solution follows Clean Architecture (monolith) with clear layer separation (Domain, Application, Infrastructure, API) and SOLID principles.
+
+> Last Changes: 2026-04
 
 ## Features
 
-- **Project Management**: Create, read, update, and delete projects.
-- **User Management**: Handle user entities and roles within projects.
-- **Task Tracking**: Manage tasks with priorities and states.
-- **Comments**: Add comments to projects or tasks.
-- **RESTful API**: Fully documented API with Swagger/OpenAPI support.
-- **Database Integration**: Uses Entity Framework Core with PostgreSQL for data persistence.
-- **Exception Handling**: Custom middleware for consistent error responses.
-- **Dependency Injection**: Clean separation of application, infrastructure, and domain layers.
+- **Project Management**: Create, list, update, and delete projects.
+- **Task Tracking**: Manage tasks (state + priority) inside a project.
+- **Task Comments**: List and create comments associated to a task inside a project.
+- **Authentication**: JWT Bearer authentication (Swagger supports Bearer tokens).
+- **Database**: Entity Framework Core + PostgreSQL.
+- **Error Handling**: Custom exception middleware for consistent API responses.
+
+- Implemented task comments endpoints (list + create) under project tasks.
+- Added comment DTOs, service layer, repository interface, and EF Core repository implementation.
+- Enforced authorization for comments and tasks: **project owner or project member**.
 
 ## Tech Stack
 
-- **Framework**: .NET 8.0
-- **Web Framework**: ASP.NET Core
+- **Framework**: .NET 8
+- **Web**: ASP.NET Core
 - **ORM**: Entity Framework Core
 - **Database**: PostgreSQL
-- **API Documentation**: Swagger/OpenAPI
-- **Architecture**: Clean Architecture (Domain, Application, Infrastructure, API layers)
+- **Docs**: Swagger / OpenAPI
 
-## Prerequisites
+## Quickstart
 
-- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- [PostgreSQL](https://www.postgresql.org/download/) (version 12 or later)
-- A code editor like Visual Studio Code or Visual Studio
+### Prerequisites
 
-## Installation
+- [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+- [PostgreSQL](https://www.postgresql.org/download/) (12+)
 
-1. **Clone the repository**:
-   ```bash
-   git clone <repository-url>
-   cd ProjectManagerBackend
-   ```
+### Setup
 
-2. **Restore NuGet packages**:
+1. Restore packages:
    ```bash
    dotnet restore ProjectManagerAPI.sln
    ```
 
-3. **Set up the database**:
-   - Ensure PostgreSQL is running.
-   - Create a database named `ProjectManagerDB`.
-   - Update the connection string in `src/ProjectManagerAPI/appsettings.json` or set environment variables for security.
+2. Configure settings (local):
+   - Connection string: `ConnectionStrings:DefaultConnection`
+   - JWT settings: `Jwt:Issuer`, `Jwt:Audience`, `Jwt:SecretKey`, `Jwt:AccessTokenExpirationMinutes`
 
-4. **Run database migrations**:
+   See `src/ProjectManagerAPI/appsettings.json` for the default shape.
+   **Do not use real credentials or secrets in source control**.
+
+3. Apply migrations:
    ```bash
    dotnet ef database update --project src/Infrastructure --startup-project src/ProjectManagerAPI
    ```
 
-5. **Build the solution**:
-   ```bash
-   dotnet build ProjectManagerAPI.sln
-   ```
-
-## Usage
-
-1. **Run the application**:
+4. Run the API:
    ```bash
    dotnet run --project src/ProjectManagerAPI
    ```
 
-2. **Access the API**:
-   - The API will be available at `https://localhost:5001` (or `http://localhost:5000`).
-   - Swagger documentation: `https://localhost:5001/swagger` (in Development environment).
+5. Open Swagger (Development): `https://localhost:5001/swagger`
 
-3. **API Endpoints**:
-   - `GET /api/projects` - Retrieve a list of projects for the current user.
-   - `POST /api/projects` - Create a new project.
-   - `PUT /api/projects/{id}` - Update an existing project.
-   - `DELETE /api/projects/{id}` - Delete a project.
+## Authentication
 
-   Note: Authentication is currently mocked with a hardcoded user ID. Implement proper authentication (e.g., JWT) for production use.
+- `POST /api/auth/register` - Register and receive an access token.
+- `POST /api/auth/login` - Login and receive an access token.
+
+Most endpoints require `Authorization: Bearer {token}`.
+
+## API Endpoints
+
+- **Projects**
+  - `GET /api/projects`
+  - `POST /api/projects`
+  - `PUT /api/projects/{id}`
+  - `DELETE /api/projects/{id}`
+
+- **Tasks**
+  - `GET /api/projects/{projectId}/tasks`
+  - `GET /api/projects/{projectId}/tasks/{taskItemId}`
+  - `POST /api/projects/{projectId}/tasks`
+  - `PUT /api/projects/{projectId}/tasks/{taskItemId}`
+  - `DELETE /api/projects/{projectId}/tasks/{taskItemId}`
+
+- **Task Comments**
+  - `GET /api/projects/{projectId}/tasks/{taskItemId}/comments`
+  - `POST /api/projects/{projectId}/tasks/{taskItemId}/comments`
+
+## Authorization Model
+
+- The API derives the acting user id from the JWT `NameIdentifier` claim.
+- For project-scoped resources (tasks and task comments), access is restricted to:
+  - the project owner, or
+  - a user with an active membership in the project.
+
+## Configuration Notes
+
+- **Database**: `ConnectionStrings:DefaultConnection`
+- **JWT**: `Jwt:*` settings in `src/ProjectManagerAPI/appsettings.json`
+- **CORS**: Not configured yet (see roadmap).
 
 ## Project Structure
 
 ```
 src/
-├── Domain/                 # Domain entities, enums, and business rules
-│   ├── Entities/           # Core business entities (Project, User, TaskItem, etc.)
-│   └── Enum/               # Enumerations (TaskPriority, TaskState, UserRol)
-├── Application/            # Application layer with services and DTOs
-│   ├── Services/           # Business logic services
-│   ├── DTOs/               # Data Transfer Objects
-│   ├── Exceptions/         # Custom exceptions
-│   └── DependencyInjection/ # Service registrations
-├── Infrastructure/         # Infrastructure concerns (EF Core, repositories)
-│   ├── Data/               # DbContext and configurations
-│   ├── Repositories/       # Data access implementations
-│   └── Migrations/         # Database migrations
-└── ProjectManagerAPI/      # ASP.NET Core Web API
-    ├── Controllers/        # API controllers
-    ├── Program.cs          # Application entry point
-    └── appsettings.json    # Configuration
+├── Domain/                 # Entities, enums, and repository abstractions
+├── Application/            # DTOs, services, use-case logic, exceptions
+├── Infrastructure/         # EF Core DbContext, configurations, repositories, migrations
+└── ProjectManagerAPI/      # ASP.NET Core Web API (controllers, Program.cs)
 ```
 
-## Configuration
+## System Diagram (Current)
 
-- **Database**: Configure the connection string in `appsettings.json` or via environment variables.
-- **Environment Variables**: For production, use environment variables for sensitive data like database credentials.
-- **Logging**: Configured via `appsettings.json` with different levels for development and production.
+```mermaid
+flowchart TD
+  Client[Client App / Swagger / Postman]
+
+  subgraph API[ProjectManagerAPI]
+    Program[Program.cs\nDI + Middleware + Auth]
+    Controllers[Controllers\nAuth / Projects / TaskItem / TaskComments]
+    Middleware[ExceptionHandlingMiddleware\nproblem+json responses]
+    Program --> Controllers
+    Program --> Middleware
+  end
+
+  subgraph App[Application Layer]
+    Services[Services\nAuthService / ProjectService / TaskItemService / CommentService]
+    DTOs[DTOs + Validators\nFluentValidation]
+  end
+
+  subgraph Security[Security Layer]
+    TokenService[JwtTokenService]
+    PasswordHasher[AspNetPasswordHasher]
+    JwtOptions[JwtOptions]
+  end
+
+  subgraph Domain[Domain Layer]
+    Entities[Entities\nUser / Project / TaskItem / Comment / UserProject]
+    Abstractions[Repository Abstractions\nIProjectRepository / ITaskItemRepository / IUserRepository / ...]
+    Enums[Enums\nTaskState / TaskPriority / UserRol]
+  end
+
+  subgraph Infra[Infrastructure Layer]
+    DbContext[ProjectManagerContext]
+    Repositories[Repositories\nProject / TaskItem / Comment / User / UserProject]
+    Config[EF Configurations + Migrations]
+    Db[(PostgreSQL)]
+    DbContext --> Repositories
+    Repositories --> Db
+    Config --> DbContext
+  end
+
+  Client -->|HTTP + JWT| Controllers
+  Controllers --> Services
+  Controllers --> DTOs
+  Services --> Abstractions
+  Services --> Entities
+  Services --> Enums
+  Services --> TokenService
+  Services --> PasswordHasher
+  TokenService --> JwtOptions
+  Abstractions --> Repositories
+  Repositories --> DbContext
+```
 
 ## Development
 
-- **Build**: `dotnet build ProjectManagerAPI.sln`
-- **Test**: No tests implemented yet. Add unit and integration tests in a future `Tests` project.
-- **Migrations**: Add new migrations with `dotnet ef migrations add <Name> --project src/Infrastructure --startup-project src/ProjectManagerAPI`
+- Restore: `dotnet restore ProjectManagerAPI.sln`
+- Build: `dotnet build ProjectManagerAPI.sln`
+- Run: `dotnet run --project src/ProjectManagerAPI`
+- Migrations:
+  - Add: `dotnet ef migrations add <Name> --project src/Infrastructure --startup-project src/ProjectManagerAPI`
+  - Update: `dotnet ef database update --project src/Infrastructure --startup-project src/ProjectManagerAPI`
+
+## Roadmap / Next Implementations
+
+- **Historial / Audit Log**: Add a history entity to register user actions within a project (who/what/when).
+- **Tests**: Unit test, integration test, deep learning and study about test using xUnit, moq and more test tools
+- **Frontend**: Implement a frontend client (auth, projects, tasks, comments).
+- **CORS + HTTPS**: Add CORS policies for frontend origins and ensure correct local/prod HTTPS behavior.
+- **FastAPI microservice**: In the future, I want to create a small microservice to implement AI (like a chatbot or something similar) in this project using Python FastAPI to practice microservices architecture.
+- **Docker**: Prepare container to deploy the backend to live production.
+- **Render**: Backend deploy platform.
 
 ## Development Tools and Automation
 
-This project leverages advanced development tools and automation to enhance productivity, code quality, and collaboration:
-
-### Agents and Skills
-- **AI Agents**: The project uses specialized AI agents (e.g., GitHub Copilot) configured with custom skills for .NET best practices, design pattern reviews, and effective README crafting. These agents assist in code generation, refactoring, and ensuring adherence to project standards.
-- **Skill-Based Guidance**: Skills are stored in `.agents/skills/` and provide domain-specific knowledge. For example:
-  - `dotnet-best-practices`: Ensures code meets .NET standards.
-  - `dotnet-design-pattern-review`: Reviews and suggests improvements for design patterns.
-  - `crafting-effective-readmes`: Guides the creation of professional documentation.
-
-### MCP Servers
-- **Microsoft Learn MCP**: Used for accessing up-to-date Microsoft documentation and code samples. This server provides authoritative content for .NET, Azure, and related technologies, ensuring accurate implementation.
-- **GitHub MCP**: Facilitates repository management, including issue tracking, pull request handling, and automated code reviews. It supports delegation of tasks to Copilot for code generation and PR creation.
-
-### GitHub Automation
-- **Pull Request Automation**: Follows a standardized PR template for consistency. Agents can delegate tasks to GitHub Copilot for automated implementation and PR creation.
-- **Code Reviews**: Automated reviews using Copilot to ensure code quality before human review.
-- **CI/CD**: Integrated with GitHub Actions (see `.github/workflows/dotnet.yml`) for automated builds, tests, and deployments.
-- **Branch Management**: Uses feature branches and follows Git flow for collaborative development.
-
-To learn more about these tools:
-- Explore the `.agents/skills/` directory for skill definitions.
-- Refer to MCP documentation for server usage.
-- Check GitHub repository settings and workflows for automation details.
+- Skills live under `.agents/skills/` (e.g., .NET best practices, design pattern review, README guidance).
+- PR generation and revitions via Github MCP server
+- Apply direct guide and learning of the Microsoft Learn MCP server
+- CI/CD via GitHub Actions: `.github/workflows/dotnet.yml`.
 
 ## Contributing
 
-Contributions are welcome! Please follow these steps:
+If you are interested in creating new modules for this small project, you are welcome to contribute!
 
 1. Fork the repository.
 2. Create a feature branch (`git checkout -b feature/YourFeature`).
 3. Commit your changes (`git commit -am 'Add some feature'`).
-4. Push to the branch (`git push origin feature/YourFeature`).
-5. Create a new Pull Request.
-
-Ensure code follows the project's best practices as defined in `.agents/skills/dotnet-best-practices/SKILL.md`.
+4. Push to the branch dev (`git push origin feature/YourFeature`).
+5. Create a Pull Request.
 
 ## Acknowledgments
 
 - Built following Clean Architecture principles.
-- Inspired by domain-driven design and best practices in .NET development.</content>
+- Automation in AI systems and study methods using MCP servers to improve study methods and knowledge

@@ -19,17 +19,6 @@ public class ProjectService(
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        // Validate request
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            throw new ValidationException("Project name is required.");
-        }
-
-        if (request.StartDate > request.EndDate)
-        {
-            throw new ValidationException("Start date must be before or equal to end date.");
-        }
-
         // Check if user exists
         var user = await userRepository.GetById(actorUserId, cancellationToken);
         if (user is null)
@@ -82,35 +71,16 @@ public class ProjectService(
 
     public async Task<IEnumerable<ProjectDto>> ListProjectsForUserAsync(Guid actorUserId, ListProjectsQuery? query = null, CancellationToken cancellationToken = default)
     {
-        // Get owned projects
-        var ownedProjects = await projectRepository.ListByUser(actorUserId, cancellationToken);
-
-        // Get projects where user is member
-        var memberships = await userProjectRepository.ListMembers(actorUserId, cancellationToken); // Wait, ListMembers is for projectId, not userId
-        // IUserProjectRepository has ListMembers(Guid projectId), but I need for userId.
-        // This is a limitation. For now, assume ListByUser includes all accessible projects.
-        // To fix, I would need to add a method, but since "ya implementada", use ListByUser.
-
-        var projects = ownedProjects;
-
-        // Apply query filters if needed
+        ProjectListFilter? filter = null;
         if (query is not null)
         {
-            if (!string.IsNullOrWhiteSpace(query.SearchTerm))
-            {
-                projects = projects.Where(p => p.Name.Contains(query.SearchTerm, StringComparison.OrdinalIgnoreCase));
-            }
-
-            if (query.StartDateFrom.HasValue)
-            {
-                projects = projects.Where(p => p.StartDate >= query.StartDateFrom.Value);
-            }
-
-            if (query.StartDateTo.HasValue)
-            {
-                projects = projects.Where(p => p.StartDate <= query.StartDateTo.Value);
-            }
+            filter = new ProjectListFilter(
+                query.SearchTerm,
+                query.StartDateFrom,
+                query.StartDateTo);
         }
+
+        var projects = await projectRepository.ListByUser(actorUserId, filter, cancellationToken);
 
         return projects.Select(MapToDto);
     }
@@ -137,14 +107,8 @@ public class ProjectService(
             throw new ForbiddenException("Only the project owner can update the project.");
         }
 
-        // Validate request
-        if (request.StartDate.HasValue && request.EndDate.HasValue && request.StartDate.Value > request.EndDate.Value)
-        {
-            throw new ValidationException("Start date must be before or equal to end date.");
-        }
-
         // Update fields
-        if (!string.IsNullOrWhiteSpace(request.Name))
+        if (request.Name is not null)
         {
             project.Name = request.Name;
         }
@@ -200,11 +164,6 @@ public class ProjectService(
         if (projectId == Guid.Empty)
         {
             throw new ValidationException("Project ID is required.");
-        }
-
-        if (request.UserId == Guid.Empty)
-        {
-            throw new ValidationException("User ID is required.");
         }
 
         var project = await projectRepository.GetById(projectId, cancellationToken);

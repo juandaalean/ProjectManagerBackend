@@ -7,9 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure.DependencyInjection;
 
-/// <summary>
-/// Extension methods for registering infrastructure services.
-/// </summary>
 public static class InfrastructureServiceRegistration
 {
     /// <summary>
@@ -24,6 +21,8 @@ public static class InfrastructureServiceRegistration
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
         services.AddScoped<IProjectRepository, ProjectRepository>();
+        services.AddScoped<ITaskItemRepository, TaskItemRepository>();
+        services.AddScoped<ICommentRepository, CommentRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IUserProjectRepository, UserProjectRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();

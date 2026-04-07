@@ -22,12 +22,16 @@ public interface IProjectRepository
     Task<Project?> GetById(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Retrieves a list of projects owned by a specific user.
+    /// Retrieves a list of projects accessible by a specific user.
     /// </summary>
     /// <param name="userId">The user ID.</param>
+    /// <param name="filter">Optional list filter contract.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A collection of projects.</returns>
-    Task<IEnumerable<Project>> ListByUser(Guid userId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Project>> ListByUser(
+        Guid userId,
+        ProjectListFilter? filter = null,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates an existing project.
