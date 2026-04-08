@@ -1,25 +1,10 @@
 # Project Manager Backend
 
-A real-world project to reinforce knowledge in software development, architectures, and clean architecture, also integrating the use of AI through MCP servers and tools like OpenCode to adapt to the new development paradigm with AI.
-Also looking to delve a little deeper into DevOps and application deployment
+## 🚀 Project Overview
 
-A backend API built with .NET 8 and ASP.NET Core for managing projects and tasks.
-The solution follows Clean Architecture (monolith) with clear layer separation (Domain, Application, Infrastructure, API) and SOLID principles.
+A backend API built with .NET 8 and ASP.NET Core that simulates a real-world project management system (similar to tools like Trello or Jira).
 
-> Last Changes: 2026-04
-
-## Features
-
-- **Project Management**: Create, list, update, and delete projects.
-- **Task Tracking**: Manage tasks (state + priority) inside a project.
-- **Task Comments**: List and create comments associated to a task inside a project.
-- **Authentication**: JWT Bearer authentication (Swagger supports Bearer tokens).
-- **Database**: Entity Framework Core + PostgreSQL.
-- **Error Handling**: Custom exception middleware for consistent API responses.
-
-- Implemented task comments endpoints (list + create) under project tasks.
-- Added comment DTOs, service layer, repository interface, and EF Core repository implementation.
-- Enforced authorization for comments and tasks: **project owner or project member**.
+This project focuses on designing a scalable and maintainable architecture using Clean Architecture principles, while also exploring how AI tools can enhance the software development workflow.
 
 ## Tech Stack
 
@@ -28,6 +13,45 @@ The solution follows Clean Architecture (monolith) with clear layer separation (
 - **ORM**: Entity Framework Core
 - **Database**: PostgreSQL
 - **Docs**: Swagger / OpenAPI
+
+
+## Core Features
+
+### 🔐 Authentication & Authorization
+- JWT-based authentication
+- Role-based access control
+
+### 📁 Project Management
+- Create, update, delete projects
+- Shared projects between users
+
+### ✅ Task Management
+- Assign tasks to users
+- Task states and priorities
+
+### 💬 Comments System
+- Add and retrieve comments on tasks
+- Access restricted to project members
+
+## Recent Updates
+
+- Implemented task comments endpoints (list + create) under project tasks.
+- Added comment DTOs, service layer, repository interface, and EF Core repository implementation.
+- Enforced authorization for comments and tasks: **project owner or project member**.
+
+## 🤖 AI-Assisted Development
+
+This project was developed using AI as an active part of the workflow, not just as a helper.
+
+Tools and approaches used:
+- Microsoft Learn MCP Server
+- GitHub MCP Server (PR automation)
+- OpenCode environment experimentation
+
+Focus:
+- Faster iteration
+- Better understanding of concepts
+- Guided learning and architecture decisions
 
 ## Quickstart
 
@@ -101,7 +125,8 @@ Most endpoints require `Authorization: Bearer {token}`.
 - **JWT**: `Jwt:*` settings in `src/ProjectManagerAPI/appsettings.json`
 - **CORS**: Not configured yet (see roadmap).
 
-## Project Structure
+## 🏗️ Project Structure
+The project follows a Clean Architecture approach with clear separation of concerns between layers:
 
 ```
 src/
@@ -177,19 +202,31 @@ flowchart TD
 ## Roadmap / Next Implementations
 
 - **Historial / Audit Log**: Add a history entity to register user actions within a project (who/what/when).
-- **Tests**: Unit test, integration test, deep learning and study about test using xUnit, moq and more test tools
 - **Frontend**: Implement a frontend client (auth, projects, tasks, comments).
 - **CORS + HTTPS**: Add CORS policies for frontend origins and ensure correct local/prod HTTPS behavior.
 - **FastAPI microservice**: In the future, I want to create a small microservice to implement AI (like a chatbot or something similar) in this project using Python FastAPI to practice microservices architecture.
 - **Docker**: Prepare container to deploy the backend to live production.
 - **Render**: Backend deploy platform.
 
-## Development Tools and Automation
+## 🧪 Testing (Planned)
 
-- Skills live under `.agents/skills/` (e.g., .NET best practices, design pattern review, README guidance).
-- PR generation and revitions via Github MCP server
-- Apply direct guide and learning of the Microsoft Learn MCP server
-- CI/CD via GitHub Actions: `.github/workflows/dotnet.yml`.
+- Unit testing with xUnit
+- Mocking with Moq
+- Integration testing for API endpoints
+
+## 🧠 Key Learnings
+
+- Applying Clean Architecture in a real-world backend project
+- Designing authorization logic for shared resources
+- Structuring scalable APIs with service and repository layers
+- Integrating AI tools into the development workflow
+- Improving problem-solving and iteration speed using AI
+
+## 🎯 Purpose of the Project
+
+This project was built to move beyond simple CRUD applications and simulate a real-world backend system with proper architecture, authorization rules, and scalability in mind.
+
+It also serves as a playground to experiment with AI-assisted development workflows.
 
 ## Contributing
 
@@ -200,8 +237,3 @@ If you are interested in creating new modules for this small project, you are we
 3. Commit your changes (`git commit -am 'Add some feature'`).
 4. Push to the branch dev (`git push origin feature/YourFeature`).
 5. Create a Pull Request.
-
-## Acknowledgments
-
-- Built following Clean Architecture principles.
-- Automation in AI systems and study methods using MCP servers to improve study methods and knowledge
