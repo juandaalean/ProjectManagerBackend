@@ -7,9 +7,20 @@ using ProjectManagerAPI.Options;
 using Security.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
+var  MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+                      policy  =>
+                      {
+                          policy.WithOrigins(" http://localhost:5174",
+                                              "https://www.WebCuandoEsteDesplegada.vercel.com")
+                                .AllowAnyMethod()
+                                .AllowAnyHeader();
+                      });
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddApiSwagger();
 builder.Services
@@ -62,6 +73,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors(MyAllowSpecificOrigins);
 
 app.UseAuthentication();
 app.UseAuthorization();
