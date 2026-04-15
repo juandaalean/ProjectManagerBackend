@@ -8,10 +8,35 @@ namespace Infrastructure.Repositories;
 public class CommentRepository(ProjectManagerContext context) : ICommentRepository
 {
     /// <summary>
+    /// Retrieves a comment by its identifier, including user information.
+    /// </summary>
+    /// <param name="commentId">The unique identifier of the comment.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>The comment if found; otherwise, null.</returns>
+    public async Task<Comment?> GetById(Guid commentId, CancellationToken cancellationToken = default)
+    {
+        return await context.Comments
+            .Include(c => c.User)
+            .FirstOrDefaultAsync(c => c.CommentId == commentId, cancellationToken);
+    }
+
+    /// <summary>
     /// Adds a new comment to the repository.
     /// </summary>
     /// <param name="comment">The comment to add.</param>
     public void Add(Comment comment) => context.Comments.Add(comment);
+
+    /// <summary>
+    /// Marks a comment as updated in the repository.
+    /// </summary>
+    /// <param name="comment">The comment to update.</param>
+    public void Update(Comment comment) => context.Comments.Update(comment);
+
+    /// <summary>
+    /// Removes a comment from the repository.
+    /// </summary>
+    /// <param name="comment">The comment to remove.</param>
+    public void Delete(Comment comment) => context.Comments.Remove(comment);
 
     /// <summary>
     /// Retrieves a list of comments associated with a specific task, including user information, ordered by creation date descending.
