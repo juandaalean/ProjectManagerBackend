@@ -220,11 +220,14 @@ flowchart TD
 - **Docker**: Prepare container to deploy the backend to live production.
 - **Render**: Backend deploy platform.
 
-## 🧪 Testing (Planned)
+## 🧪 Testing 
 
-- Unit testing with xUnit
+Implemented unit tests for each service and controller in this proyect
+
+- Unit testing with xUnit using AAA (Arrange, Act, Assert) pattern 
 - Mocking with Moq
-- Integration testing for API endpoints
+
+Next implementation is add integration tests
 
 ## 🧠 Key Learnings
 
