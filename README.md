@@ -42,6 +42,7 @@ This project focuses on designing a scalable and maintainable architecture using
 - Comment permissions:
   - Edit comment: only the comment author.
   - Delete comment: only the comment author with **Admin** role in the project.
+- Implemented CORS into API to recive Frontend local port
 
 ## 🤖 AI-Assisted Development
 
