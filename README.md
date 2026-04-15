@@ -38,6 +38,11 @@ This project focuses on designing a scalable and maintainable architecture using
 - Implemented task comments endpoints (list + create) under project tasks.
 - Added comment DTOs, service layer, repository interface, and EF Core repository implementation.
 - Enforced authorization for comments and tasks: **project owner or project member**.
+- Added task comment update and delete endpoints.
+- Comment permissions:
+  - Edit comment: only the comment author.
+  - Delete comment: only the comment author with **Admin** role in the project.
+- Implemented CORS into API to recive Frontend local port
 
 ## 🤖 AI-Assisted Development
 
@@ -111,6 +116,8 @@ Most endpoints require `Authorization: Bearer {token}`.
 - **Task Comments**
   - `GET /api/projects/{projectId}/tasks/{taskItemId}/comments`
   - `POST /api/projects/{projectId}/tasks/{taskItemId}/comments`
+  - `PUT /api/projects/{projectId}/tasks/{taskItemId}/comments/{commentId}`
+  - `DELETE /api/projects/{projectId}/tasks/{taskItemId}/comments/{commentId}`
 
 ## Authorization Model
 
@@ -118,6 +125,11 @@ Most endpoints require `Authorization: Bearer {token}`.
 - For project-scoped resources (tasks and task comments), access is restricted to:
   - the project owner, or
   - a user with an active membership in the project.
+- Task comments extra rules:
+  - Update requires the acting user to be the comment author.
+  - Delete requires the acting user to be both:
+    - the comment author, and
+    - project member with role `Admin`.
 
 ## Configuration Notes
 
@@ -208,11 +220,14 @@ flowchart TD
 - **Docker**: Prepare container to deploy the backend to live production.
 - **Render**: Backend deploy platform.
 
-## 🧪 Testing (Planned)
+## 🧪 Testing 
 
-- Unit testing with xUnit
+Implemented unit tests for each service and controller in this proyect
+
+- Unit testing with xUnit using AAA (Arrange, Act, Assert) pattern 
 - Mocking with Moq
-- Integration testing for API endpoints
+
+Next implementation is add integration tests
 
 ## 🧠 Key Learnings
 

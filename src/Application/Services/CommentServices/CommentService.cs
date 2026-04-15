@@ -2,6 +2,7 @@ using Application.DTOs.Comments;
 using Application.Exceptions;
 using Domain.Abstractions;
 using Domain.Entities;
+using Domain.Enum;
 
 namespace Application.Services.CommentServices;
 
@@ -127,6 +128,125 @@ public class CommentService(
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return MapToDto(comment, user.Name);
+    }
+
+    /// <summary>
+    /// Updates an existing comment for a task within a project.
+    /// </summary>
+    /// <param name="projectId">The project ID.</param>
+    /// <param name="taskItemId">The task ID.</param>
+    /// <param name="commentId">The comment ID.</param>
+    /// <param name="actorUserId">The acting user ID.</param>
+    /// <param name="request">The update comment request.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task containing the updated comment DTO.</returns>
+    public async Task<CommentDto> UpdateCommentAsync(Guid projectId, Guid taskItemId, Guid commentId, Guid actorUserId, UpdateCommentRequest request, CancellationToken cancellationToken = default)
+    {
+        if (projectId == Guid.Empty)
+        {
+            throw new ValidationException("Project ID is required.");
+        }
+
+        if (taskItemId == Guid.Empty)
+        {
+            throw new ValidationException("Task ID is required.");
+        }
+
+        if (commentId == Guid.Empty)
+        {
+            throw new ValidationException("Comment ID is required.");
+        }
+
+        ArgumentNullException.ThrowIfNull(request);
+
+        var project = await projectRepository.GetById(projectId, cancellationToken);
+        if (project is null)
+        {
+            throw new NotFoundException("Project not found.");
+        }
+
+        var taskItem = await taskItemRepository.GetById(taskItemId, cancellationToken);
+        if (taskItem is null || taskItem.ProjectId != projectId)
+        {
+            throw new NotFoundException("Task not found.");
+        }
+
+        var comment = await commentRepository.GetById(commentId, cancellationToken);
+        if (comment is null || comment.TaskId != taskItemId)
+        {
+            throw new NotFoundException("Comment not found.");
+        }
+
+        if (comment.UserId != actorUserId)
+        {
+            throw new ForbiddenException("Only the comment author can edit it.");
+        }
+
+        comment.Content = request.Content;
+
+        commentRepository.Update(comment);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return MapToDto(comment);
+    }
+
+    /// <summary>
+    /// Deletes an existing comment for a task within a project.
+    /// </summary>
+    /// <param name="projectId">The project ID.</param>
+    /// <param name="taskItemId">The task ID.</param>
+    /// <param name="commentId">The comment ID.</param>
+    /// <param name="actorUserId">The acting user ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    public async Task DeleteCommentAsync(Guid projectId, Guid taskItemId, Guid commentId, Guid actorUserId, CancellationToken cancellationToken = default)
+    {
+        if (projectId == Guid.Empty)
+        {
+            throw new ValidationException("Project ID is required.");
+        }
+
+        if (taskItemId == Guid.Empty)
+        {
+            throw new ValidationException("Task ID is required.");
+        }
+
+        if (commentId == Guid.Empty)
+        {
+            throw new ValidationException("Comment ID is required.");
+        }
+
+        var project = await projectRepository.GetById(projectId, cancellationToken);
+        if (project is null)
+        {
+            throw new NotFoundException("Project not found.");
+        }
+
+        var taskItem = await taskItemRepository.GetById(taskItemId, cancellationToken);
+        if (taskItem is null || taskItem.ProjectId != projectId)
+        {
+            throw new NotFoundException("Task not found.");
+        }
+
+        var comment = await commentRepository.GetById(commentId, cancellationToken);
+        if (comment is null || comment.TaskId != taskItemId)
+        {
+            throw new NotFoundException("Comment not found.");
+        }
+
+        if (comment.UserId != actorUserId)
+        {
+            throw new ForbiddenException("Only the comment author can delete it.");
+        }
+
+        var membership = await userProjectRepository.GetMembership(actorUserId, projectId, cancellationToken);
+        if (membership is null || membership.RoleInProject != UserRol.Admin)
+        {
+            throw new ForbiddenException("Only project admins can delete comments.");
+        }
+
+        commentRepository.Delete(comment);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     /// <summary>

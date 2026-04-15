@@ -44,6 +44,39 @@ public class TaskCommentsController(ICommentService commentService) : Controller
     }
 
     /// <summary>
+    /// Updates an existing comment in a specific task within a project.
+    /// </summary>
+    /// <param name="projectId">The project ID.</param>
+    /// <param name="taskItemId">The task ID.</param>
+    /// <param name="commentId">The comment ID.</param>
+    /// <param name="request">The update comment request.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The updated comment.</returns>
+    [HttpPut("{commentId:guid}")]
+    public async Task<ActionResult<CommentDto>> UpdateComment(Guid projectId, Guid taskItemId, Guid commentId, [FromBody] UpdateCommentRequest request, CancellationToken cancellationToken)
+    {
+        var actorUserId = GetActorUserId();
+        var comment = await commentService.UpdateCommentAsync(projectId, taskItemId, commentId, actorUserId, request, cancellationToken);
+        return Ok(comment);
+    }
+
+    /// <summary>
+    /// Deletes an existing comment in a specific task within a project.
+    /// </summary>
+    /// <param name="projectId">The project ID.</param>
+    /// <param name="taskItemId">The task ID.</param>
+    /// <param name="commentId">The comment ID.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>No content.</returns>
+    [HttpDelete("{commentId:guid}")]
+    public async Task<IActionResult> DeleteComment(Guid projectId, Guid taskItemId, Guid commentId, CancellationToken cancellationToken)
+    {
+        var actorUserId = GetActorUserId();
+        await commentService.DeleteCommentAsync(projectId, taskItemId, commentId, actorUserId, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>
     /// Gets the actor user ID from the current user's claims.
     /// </summary>
     /// <returns>The actor user ID.</returns>
