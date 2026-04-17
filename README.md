@@ -226,6 +226,7 @@ Implemented unit tests for each service and controller in this proyect
 
 - Unit testing with xUnit using AAA (Arrange, Act, Assert) pattern 
 - Mocking with Moq
+- Using ReportGenerator and CodeCoverageSummary in github actions, added test coverage percentage in pull requests
 
 Next implementation is add integration tests
 

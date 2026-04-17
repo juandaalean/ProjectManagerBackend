@@ -12,3 +12,8 @@
 appsettings.Local.json
 appsettings.json
 .env
+
+# Test results and coverage
+TestResults/
+coveragereport/
+*.cobertura.xml
