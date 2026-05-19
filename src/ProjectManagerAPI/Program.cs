@@ -15,7 +15,7 @@ builder.Services.AddCors(options =>
                       policy  =>
                       {
                           policy.WithOrigins("http://localhost:5173",
-                                            "https://www.WebCuandoEsteDesplegada.vercel.com")
+                                            "https://project-manager-frontend-virid.vercel.app/")
                                 .AllowAnyMethod()
                                 .AllowAnyHeader();
                       });
