@@ -61,6 +61,22 @@ public class TaskItemController(ITaskItemService taskItemService) : ControllerBa
     }
 
     /// <summary>
+    /// Assigns a task to another user inside a project.
+    /// </summary>
+    /// <param name="projectId">The project ID.</param>
+    /// <param name="taskItemId">The task ID.</param>
+    /// <param name="request">The assignment request.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The updated task.</returns>
+    [HttpPut("{taskItemId:guid}/assignee")]
+    public async Task<ActionResult<TaskItemDto>> AssignTask(Guid projectId, Guid taskItemId, [FromBody] AssignTaskItemRequest request, CancellationToken cancellationToken)
+    {
+        var actorUserId = GetActorUserId();
+        var task = await taskItemService.AssignTaskItemAsync(projectId, taskItemId, actorUserId, request, cancellationToken);
+        return Ok(task);
+    }
+
+    /// <summary>
     /// Updates a task inside a project.
     /// </summary>
     /// <param name="projectId">The project ID.</param>

@@ -10,7 +10,9 @@ namespace Application.DTOs.TaskItem
         Guid? AssignedUserId,
         string? Title,
         string? Description,
-        TaskState? TaskState, 
-        TaskPriority? TaskPriority
+        TaskState? TaskState,
+        TaskPriority? TaskPriority,
+        DateTime? CreatedAt = null,
+        DateTime? CompletedAt = null
     );
 }

@@ -79,17 +79,49 @@ Focus:
    See `src/ProjectManagerAPI/appsettings.json` for the default shape.
    **Do not use real credentials or secrets in source control**.
 
-3. Apply migrations:
+### Neon deployment
+
+For production, keep the Neon connection string outside the repository and inject it as an environment variable:
+
+```bash
+ConnectionStrings__DefaultConnection="<your-neon-connection-string>"
+ASPNETCORE_ENVIRONMENT=Production
+```
+
+If you are deploying with Docker, pass the same environment variable into the container. The API already reads `ConnectionStrings:DefaultConnection` through the normal ASP.NET Core configuration pipeline, so Neon works without code changes.
+
+Right now this is the only environment variable you need to start the API against Neon. The JWT values remain in the existing configuration and can be externalized later if you want a stricter production setup.
+
+Before publishing, run migrations against Neon with the same connection string:
+
+```bash
+dotnet ef database update --project src/Infrastructure --startup-project src/ProjectManagerAPI
+```
+
+### Docker deployment
+
+1. Create a local `.env` file from `.env.example` and paste your Neon connection string.
+2. Build and run the container:
+
+```bash
+docker compose up -d --build
+```
+
+3. Open the API on `http://localhost:8080`.
+
+The container does not include a database service because production uses Neon as the external PostgreSQL provider.
+
+4. Apply migrations:
    ```bash
    dotnet ef database update --project src/Infrastructure --startup-project src/ProjectManagerAPI
    ```
 
-4. Run the API:
+5. Run the API:
    ```bash
    dotnet run --project src/ProjectManagerAPI
    ```
 
-5. Open Swagger (Development): `https://localhost:5001/swagger`
+6. Open Swagger (Development): `https://localhost:5001/swagger`
 
 ## Authentication
 
@@ -105,6 +137,10 @@ Most endpoints require `Authorization: Bearer {token}`.
   - `POST /api/projects`
   - `PUT /api/projects/{id}`
   - `DELETE /api/projects/{id}`
+  - `GET /api/projects/{id}/members`
+  - `POST /api/projects/{id}/members`
+  - `PUT /api/projects/{id}/members/role`
+  - `DELETE /api/projects/{id}/members`
 
 - **Tasks**
   - `GET /api/projects/{projectId}/tasks`
@@ -112,12 +148,16 @@ Most endpoints require `Authorization: Bearer {token}`.
   - `POST /api/projects/{projectId}/tasks`
   - `PUT /api/projects/{projectId}/tasks/{taskItemId}`
   - `DELETE /api/projects/{projectId}/tasks/{taskItemId}`
+  - `PUT /api/projects/{projectId}/tasks/{taskItemId}/assignee`
 
 - **Task Comments**
   - `GET /api/projects/{projectId}/tasks/{taskItemId}/comments`
   - `POST /api/projects/{projectId}/tasks/{taskItemId}/comments`
   - `PUT /api/projects/{projectId}/tasks/{taskItemId}/comments/{commentId}`
   - `DELETE /api/projects/{projectId}/tasks/{taskItemId}/comments/{commentId}`
+
+  **Task Items**
+  - `GET /api/task-items/by-projects`
 
 ## Authorization Model
 
@@ -134,6 +174,7 @@ Most endpoints require `Authorization: Bearer {token}`.
 ## Configuration Notes
 
 - **Database**: `ConnectionStrings:DefaultConnection`
+- **Production database**: set `ConnectionStrings__DefaultConnection` in the environment for Neon
 - **JWT**: `Jwt:*` settings in `src/ProjectManagerAPI/appsettings.json`
 - **CORS**: Not configured yet (see roadmap).
 
