@@ -80,4 +80,13 @@ public interface IProjectService
     /// <param name="actorUserId">The ID of the user performing the action.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     Task UpdateMemberRoleAsync(Guid projectId, Guid userId, UserRol role, Guid actorUserId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lists all members of a project.
+    /// </summary>
+    /// <param name="projectId">The project ID.</param>
+    /// <param name="actorUserId">The ID of the user performing the action.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A collection of project member DTOs.</returns>
+    Task<IEnumerable<ProjectMemberDto>> ListProjectMembersAsync(Guid projectId, Guid actorUserId, CancellationToken cancellationToken = default);
 }

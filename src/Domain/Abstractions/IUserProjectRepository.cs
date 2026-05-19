@@ -13,6 +13,10 @@ public interface IUserProjectRepository
     /// <param name="userProject">The user-project relationship to add.</param>
     void AddMember(UserProject userProject);
 
+    /// <summary> Adds a member to a project. </summary>
+    /// <param name="userProject">The user-project relationship to add.</param 
+    void Add(UserProject userProject);
+
     /// <summary>
     /// Removes a member from a project.
     /// </summary>

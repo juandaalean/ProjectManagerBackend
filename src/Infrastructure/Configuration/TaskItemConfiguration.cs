@@ -27,6 +27,11 @@ namespace Infrastructure.Configuration
             builder.Property(t => t.Description)
                 .HasMaxLength(500);
 
+            builder.Property(t => t.CreatedAt)
+                .IsRequired();
+
+            builder.Property(t => t.CompletedAt);
+
             builder.Property(t => t.State)
                 .HasConversion<string>();
 
