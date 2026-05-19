@@ -1,0 +1,10 @@
+.git
+.github
+.vs
+.env
+.env.*
+**/bin/
+**/obj/
+**/.DS_Store
+README.md
+tests/

@@ -29,6 +29,7 @@ public class UserProjectRepository(ProjectManagerContext context) : IUserProject
     public async Task<IEnumerable<UserProject>> ListMembers(Guid projectId, CancellationToken cancellationToken = default)
     {
         return await context.UserProjects
+            .Include(up => up.User)
             .Where(up => up.ProjectId == projectId)
             .ToListAsync(cancellationToken);
     }
@@ -39,5 +40,10 @@ public class UserProjectRepository(ProjectManagerContext context) : IUserProject
             .Include(up => up.Project)
             .Where(up => up.UserId == userId)
             .ToListAsync(cancellationToken);
+    }
+
+    public void Add(UserProject userProject)
+    {
+        context.UserProjects.Add(userProject);
     }
 }

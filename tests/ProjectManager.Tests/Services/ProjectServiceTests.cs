@@ -70,6 +70,7 @@ public class ProjectServiceTests
         };
 
         _projectRepository.Setup(x => x.GetById(projectId, It.IsAny<CancellationToken>())).ReturnsAsync(project);
+        _userRepository.Setup(x => x.GetById(actorUserId, It.IsAny<CancellationToken>())).ReturnsAsync(new User { UserId = actorUserId, Name = "Owner" });
 
         var service = CreateService();
 
@@ -153,6 +154,7 @@ public class ProjectServiceTests
         };
 
         _projectRepository.Setup(x => x.GetById(projectId, It.IsAny<CancellationToken>())).ReturnsAsync(project);
+        _userRepository.Setup(x => x.GetById(actorUserId, It.IsAny<CancellationToken>())).ReturnsAsync(new User { UserId = actorUserId, Name = "Owner" });
 
         var service = CreateService();
 
@@ -176,6 +178,8 @@ public class ProjectServiceTests
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow
         });
+        _userRepository.Setup(x => x.GetById(actorUserId, It.IsAny<CancellationToken>())).ReturnsAsync(new User { UserId = actorUserId, Name = "Actor" });
+        _userProjectRepository.Setup(x => x.GetMembership(actorUserId, projectId, It.IsAny<CancellationToken>())).ReturnsAsync(new UserProject { UserId = actorUserId, ProjectId = projectId, RoleInProject = UserRol.User });
 
         var service = CreateService();
 
@@ -191,6 +195,7 @@ public class ProjectServiceTests
         var projectId = Guid.NewGuid();
         var project = new Project { ProjectId = projectId, OwnerId = actorUserId, Name = "P", StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow };
         _projectRepository.Setup(x => x.GetById(projectId, It.IsAny<CancellationToken>())).ReturnsAsync(project);
+        _userRepository.Setup(x => x.GetById(actorUserId, It.IsAny<CancellationToken>())).ReturnsAsync(new User { UserId = actorUserId, Name = "Owner" });
 
         var service = CreateService();
 
@@ -213,6 +218,8 @@ public class ProjectServiceTests
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow
         });
+        _userRepository.Setup(x => x.GetById(actorUserId, It.IsAny<CancellationToken>())).ReturnsAsync(new User { UserId = actorUserId, Name = "Actor" });
+        _userProjectRepository.Setup(x => x.GetMembership(actorUserId, projectId, It.IsAny<CancellationToken>())).ReturnsAsync(new UserProject { UserId = actorUserId, ProjectId = projectId, RoleInProject = UserRol.User });
 
         var service = CreateService();
 
@@ -222,22 +229,71 @@ public class ProjectServiceTests
     }
 
     [Fact]
+    public async Task UpdateProjectAsync_ShouldUpdateProject_WhenActorIsProjectAdmin()
+    {
+        var actorUserId = Guid.NewGuid();
+        var projectId = Guid.NewGuid();
+        var project = new Project
+        {
+            ProjectId = projectId,
+            Name = "Old",
+            OwnerId = Guid.NewGuid(),
+            StartDate = DateTime.UtcNow,
+            EndDate = DateTime.UtcNow
+        };
+
+        _projectRepository.Setup(x => x.GetById(projectId, It.IsAny<CancellationToken>())).ReturnsAsync(project);
+        _userRepository.Setup(x => x.GetById(actorUserId, It.IsAny<CancellationToken>())).ReturnsAsync(new User { UserId = actorUserId, Name = "Admin" });
+        _userProjectRepository.Setup(x => x.GetMembership(actorUserId, projectId, It.IsAny<CancellationToken>())).ReturnsAsync(new UserProject { UserId = actorUserId, ProjectId = projectId, RoleInProject = UserRol.Admin });
+
+        var service = CreateService();
+
+        var result = await service.UpdateProjectAsync(projectId, new UpdateProjectRequest("New", "Desc", null, null), actorUserId, CancellationToken.None);
+
+        Assert.Equal("New", result.Name);
+        _projectRepository.Verify(x => x.Update(project), Times.Once);
+    }
+
+    [Fact]
     public async Task AddMemberAsync_ShouldAddMember_WhenOwnerAndUserExists()
     {
         var actorUserId = Guid.NewGuid();
         var projectId = Guid.NewGuid();
         var targetUserId = Guid.NewGuid();
+        var targetEmail = "member@example.com";
 
         _projectRepository.Setup(x => x.GetById(projectId, It.IsAny<CancellationToken>())).ReturnsAsync(new Project { ProjectId = projectId, OwnerId = actorUserId, Name = "P", StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow });
-        _userRepository.Setup(x => x.GetById(targetUserId, It.IsAny<CancellationToken>())).ReturnsAsync(new User { UserId = targetUserId, Name = "U" });
+        _userRepository.Setup(x => x.GetById(actorUserId, It.IsAny<CancellationToken>())).ReturnsAsync(new User { UserId = actorUserId, Name = "Owner", Rol = UserRol.Admin });
+        _userRepository.Setup(x => x.GetByEmail(targetEmail, It.IsAny<CancellationToken>())).ReturnsAsync(new User { UserId = targetUserId, Email = targetEmail, Name = "U" });
         _userProjectRepository.Setup(x => x.GetMembership(targetUserId, projectId, It.IsAny<CancellationToken>())).ReturnsAsync((UserProject?)null);
 
         var service = CreateService();
 
-        await service.AddMemberAsync(projectId, new AddProjectMemberRequest(targetUserId, UserRol.User), actorUserId, CancellationToken.None);
+        await service.AddMemberAsync(projectId, new AddProjectMemberRequest(targetEmail, UserRol.User), actorUserId, CancellationToken.None);
 
         _userProjectRepository.Verify(x => x.AddMember(It.Is<UserProject>(m => m.UserId == targetUserId && m.ProjectId == projectId)), Times.Once);
         _unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task AddMemberAsync_ShouldAddMember_WhenActorIsProjectCoordinator()
+    {
+        var actorUserId = Guid.NewGuid();
+        var projectId = Guid.NewGuid();
+        var targetUserId = Guid.NewGuid();
+        var targetEmail = "member@example.com";
+
+        _projectRepository.Setup(x => x.GetById(projectId, It.IsAny<CancellationToken>())).ReturnsAsync(new Project { ProjectId = projectId, OwnerId = Guid.NewGuid(), Name = "P", StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow });
+        _userRepository.Setup(x => x.GetById(actorUserId, It.IsAny<CancellationToken>())).ReturnsAsync(new User { UserId = actorUserId, Name = "Coordinator" });
+        _userRepository.Setup(x => x.GetByEmail(targetEmail, It.IsAny<CancellationToken>())).ReturnsAsync(new User { UserId = targetUserId, Email = targetEmail, Name = "U" });
+        _userProjectRepository.Setup(x => x.GetMembership(actorUserId, projectId, It.IsAny<CancellationToken>())).ReturnsAsync(new UserProject { UserId = actorUserId, ProjectId = projectId, RoleInProject = UserRol.Coordinator });
+        _userProjectRepository.Setup(x => x.GetMembership(targetUserId, projectId, It.IsAny<CancellationToken>())).ReturnsAsync((UserProject?)null);
+
+        var service = CreateService();
+
+        await service.AddMemberAsync(projectId, new AddProjectMemberRequest(targetEmail, UserRol.User), actorUserId, CancellationToken.None);
+
+        _userProjectRepository.Verify(x => x.AddMember(It.Is<UserProject>(m => m.UserId == targetUserId && m.ProjectId == projectId)), Times.Once);
     }
 
     [Fact]
@@ -246,14 +302,16 @@ public class ProjectServiceTests
         var actorUserId = Guid.NewGuid();
         var projectId = Guid.NewGuid();
         var targetUserId = Guid.NewGuid();
+        var targetEmail = "member@example.com";
 
         _projectRepository.Setup(x => x.GetById(projectId, It.IsAny<CancellationToken>())).ReturnsAsync(new Project { ProjectId = projectId, OwnerId = actorUserId, Name = "P", StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow });
-        _userRepository.Setup(x => x.GetById(targetUserId, It.IsAny<CancellationToken>())).ReturnsAsync(new User { UserId = targetUserId, Name = "U" });
+        _userRepository.Setup(x => x.GetById(actorUserId, It.IsAny<CancellationToken>())).ReturnsAsync(new User { UserId = actorUserId, Name = "Owner", Rol = UserRol.Admin });
+        _userRepository.Setup(x => x.GetByEmail(targetEmail, It.IsAny<CancellationToken>())).ReturnsAsync(new User { UserId = targetUserId, Email = targetEmail, Name = "U" });
         _userProjectRepository.Setup(x => x.GetMembership(targetUserId, projectId, It.IsAny<CancellationToken>())).ReturnsAsync(new UserProject { UserId = targetUserId, ProjectId = projectId });
 
         var service = CreateService();
 
-        var act = () => service.AddMemberAsync(projectId, new AddProjectMemberRequest(targetUserId, UserRol.User), actorUserId, CancellationToken.None);
+        var act = () => service.AddMemberAsync(projectId, new AddProjectMemberRequest(targetEmail, UserRol.User), actorUserId, CancellationToken.None);
 
         await Assert.ThrowsAsync<ValidationException>(act);
     }
@@ -267,6 +325,7 @@ public class ProjectServiceTests
         var membership = new UserProject { UserId = userId, ProjectId = projectId };
 
         _projectRepository.Setup(x => x.GetById(projectId, It.IsAny<CancellationToken>())).ReturnsAsync(new Project { ProjectId = projectId, OwnerId = actorUserId, Name = "P", StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow });
+        _userRepository.Setup(x => x.GetById(actorUserId, It.IsAny<CancellationToken>())).ReturnsAsync(new User { UserId = actorUserId, Name = "Owner", Rol = UserRol.Admin });
         _userProjectRepository.Setup(x => x.GetMembership(userId, projectId, It.IsAny<CancellationToken>())).ReturnsAsync(membership);
 
         var service = CreateService();
@@ -284,6 +343,7 @@ public class ProjectServiceTests
         var projectId = Guid.NewGuid();
 
         _projectRepository.Setup(x => x.GetById(projectId, It.IsAny<CancellationToken>())).ReturnsAsync(new Project { ProjectId = projectId, OwnerId = actorUserId, Name = "P", StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow });
+        _userRepository.Setup(x => x.GetById(actorUserId, It.IsAny<CancellationToken>())).ReturnsAsync(new User { UserId = actorUserId, Name = "Owner", Rol = UserRol.Admin });
 
         var service = CreateService();
 
@@ -301,6 +361,7 @@ public class ProjectServiceTests
         var membership = new UserProject { UserId = userId, ProjectId = projectId, RoleInProject = UserRol.User };
 
         _projectRepository.Setup(x => x.GetById(projectId, It.IsAny<CancellationToken>())).ReturnsAsync(new Project { ProjectId = projectId, OwnerId = actorUserId, Name = "P", StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow });
+        _userRepository.Setup(x => x.GetById(actorUserId, It.IsAny<CancellationToken>())).ReturnsAsync(new User { UserId = actorUserId, Name = "Owner", Rol = UserRol.Admin });
         _userProjectRepository.Setup(x => x.GetMembership(userId, projectId, It.IsAny<CancellationToken>())).ReturnsAsync(membership);
 
         var service = CreateService();
@@ -319,6 +380,7 @@ public class ProjectServiceTests
         var userId = Guid.NewGuid();
 
         _projectRepository.Setup(x => x.GetById(projectId, It.IsAny<CancellationToken>())).ReturnsAsync(new Project { ProjectId = projectId, OwnerId = actorUserId, Name = "P", StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow });
+        _userRepository.Setup(x => x.GetById(actorUserId, It.IsAny<CancellationToken>())).ReturnsAsync(new User { UserId = actorUserId, Name = "Owner", Rol = UserRol.Admin });
         _userProjectRepository.Setup(x => x.GetMembership(userId, projectId, It.IsAny<CancellationToken>())).ReturnsAsync((UserProject?)null);
 
         var service = CreateService();

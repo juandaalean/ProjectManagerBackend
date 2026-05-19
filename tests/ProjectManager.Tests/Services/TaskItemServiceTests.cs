@@ -41,11 +41,14 @@ public class TaskItemServiceTests
             .ReturnsAsync(new UserProject { UserId = assignedUserId, ProjectId = projectId, RoleInProject = UserRol.User });
 
         var service = CreateService();
-        var request = new CreateTaskItemRequest(assignedUserId, "Task", "Desc", TaskPriority.High, TaskState.Active);
+        var completedAt = DateTime.UtcNow.AddDays(2);
+        var request = new CreateTaskItemRequest(assignedUserId, "Task", "Desc", TaskPriority.High, TaskState.Active, completedAt);
 
         var result = await service.CreateTaskItemAsync(projectId, request, actorUserId, CancellationToken.None);
 
         Assert.Equal("Task", result.Title);
+        Assert.NotEqual(default, result.CreatedAt);
+        Assert.Equal(completedAt, result.CompletedAt);
         _taskItemRepository.Verify(x => x.Add(It.IsAny<TaskItem>()), Times.Once);
         _unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -180,6 +183,49 @@ public class TaskItemServiceTests
         var service = CreateService();
 
         var act = () => service.UpdateTaskItemAsync(projectId, taskId, actorUserId, new UpdateTaskItemRequest(null, "New title", null, null, null), CancellationToken.None);
+
+        await Assert.ThrowsAsync<ForbiddenException>(act);
+    }
+
+    [Fact]
+    public async Task AssignTaskItemAsync_ShouldAssign_WhenActorIsPrivileged()
+    {
+        var actorUserId = Guid.NewGuid();
+        var projectId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var assignedUserId = Guid.NewGuid();
+        var task = new TaskItem { TaskId = taskId, ProjectId = projectId, AssignedUserId = actorUserId, Title = "Task", State = TaskState.Active, Priority = TaskPriority.Low };
+
+        _projectRepository.Setup(x => x.GetById(projectId, It.IsAny<CancellationToken>())).ReturnsAsync(new Project { ProjectId = projectId, OwnerId = Guid.NewGuid(), Name = "P", StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow });
+        _taskItemRepository.Setup(x => x.GetById(taskId, It.IsAny<CancellationToken>())).ReturnsAsync(task);
+        _userProjectRepository.Setup(x => x.GetMembership(actorUserId, projectId, It.IsAny<CancellationToken>())).ReturnsAsync(new UserProject { UserId = actorUserId, ProjectId = projectId, RoleInProject = UserRol.Admin });
+        _userRepository.Setup(x => x.GetById(assignedUserId, It.IsAny<CancellationToken>())).ReturnsAsync(new User { UserId = assignedUserId, Name = "Assigned" });
+        _userProjectRepository.Setup(x => x.GetMembership(assignedUserId, projectId, It.IsAny<CancellationToken>())).ReturnsAsync(new UserProject { UserId = assignedUserId, ProjectId = projectId, RoleInProject = UserRol.User });
+
+        var service = CreateService();
+
+        var result = await service.AssignTaskItemAsync(projectId, taskId, actorUserId, new AssignTaskItemRequest(assignedUserId), CancellationToken.None);
+
+        Assert.Equal(assignedUserId, result.AssignedUserId);
+        _taskItemRepository.Verify(x => x.Update(task), Times.Once);
+        _unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task AssignTaskItemAsync_ShouldThrowForbidden_WhenActorIsNotPrivileged()
+    {
+        var actorUserId = Guid.NewGuid();
+        var projectId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var assignedUserId = Guid.NewGuid();
+
+        _projectRepository.Setup(x => x.GetById(projectId, It.IsAny<CancellationToken>())).ReturnsAsync(new Project { ProjectId = projectId, OwnerId = Guid.NewGuid(), Name = "P", StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow });
+        _taskItemRepository.Setup(x => x.GetById(taskId, It.IsAny<CancellationToken>())).ReturnsAsync(new TaskItem { TaskId = taskId, ProjectId = projectId, AssignedUserId = actorUserId, Title = "Task", State = TaskState.Active, Priority = TaskPriority.Low });
+        _userProjectRepository.Setup(x => x.GetMembership(actorUserId, projectId, It.IsAny<CancellationToken>())).ReturnsAsync(new UserProject { UserId = actorUserId, ProjectId = projectId, RoleInProject = UserRol.User });
+
+        var service = CreateService();
+
+        var act = () => service.AssignTaskItemAsync(projectId, taskId, actorUserId, new AssignTaskItemRequest(assignedUserId), CancellationToken.None);
 
         await Assert.ThrowsAsync<ForbiddenException>(act);
     }

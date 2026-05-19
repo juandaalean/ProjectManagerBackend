@@ -67,6 +67,26 @@ public class TaskItemControllerTests
     }
 
     [Fact]
+    public async Task AssignTask_ShouldReturnOkWithUpdatedTask()
+    {
+        var actorUserId = Guid.NewGuid();
+        var projectId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var assignedUserId = Guid.NewGuid();
+        _taskItemService.Setup(x => x.AssignTaskItemAsync(projectId, taskId, actorUserId, It.IsAny<AssignTaskItemRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TaskItemDto(taskId, "Task", "Desc", TaskState.Active, TaskPriority.Medium, projectId, assignedUserId));
+
+        var controller = new TaskItemController(_taskItemService.Object);
+        ControllerTestHelper.SetUser(controller, actorUserId);
+
+        var result = await controller.AssignTask(projectId, taskId, new AssignTaskItemRequest(assignedUserId), CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var payload = Assert.IsType<TaskItemDto>(ok.Value);
+        Assert.Equal(assignedUserId, payload.AssignedUserId);
+    }
+
+    [Fact]
     public async Task UpdateTask_ShouldReturnOkWithUpdatedTask()
     {
         var actorUserId = Guid.NewGuid();
@@ -130,6 +150,17 @@ public class TaskItemControllerTests
         ControllerTestHelper.SetUser(controller, null);
 
         var act = () => controller.CreateTask(Guid.NewGuid(), new CreateTaskItemRequest(Guid.NewGuid(), "Task", null, TaskPriority.Low), CancellationToken.None);
+
+        await Assert.ThrowsAsync<UnauthorizedException>(act);
+    }
+
+    [Fact]
+    public async Task AssignTask_ShouldThrowUnauthorized_WhenClaimIsMissing()
+    {
+        var controller = new TaskItemController(_taskItemService.Object);
+        ControllerTestHelper.SetUser(controller, null);
+
+        var act = () => controller.AssignTask(Guid.NewGuid(), Guid.NewGuid(), new AssignTaskItemRequest(Guid.NewGuid()), CancellationToken.None);
 
         await Assert.ThrowsAsync<UnauthorizedException>(act);
     }

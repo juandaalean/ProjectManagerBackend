@@ -14,8 +14,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: MyAllowSpecificOrigins,
                       policy  =>
                       {
-                          policy.WithOrigins(" http://localhost:5174",
-                                              "https://www.WebCuandoEsteDesplegada.vercel.com")
+                          policy.WithOrigins("http://localhost:5173",
+                                            "https://www.WebCuandoEsteDesplegada.vercel.com")
                                 .AllowAnyMethod()
                                 .AllowAnyHeader();
                       });

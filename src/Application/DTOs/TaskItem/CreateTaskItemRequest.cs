@@ -11,6 +11,7 @@ namespace Application.DTOs.TaskItem
         string Title,
         string? Description,
         TaskPriority TaskPriority,
-        TaskState TaskState = TaskState.Active
+        TaskState TaskState = TaskState.Active,
+        DateTime? CompletedAt = null
     );
 }

@@ -37,7 +37,16 @@ public class ProjectService(
             OwnerId = actorUserId
         };
 
+        // Create UserProject entry for owner
+        var userProject = new UserProject
+        {
+            UserId = actorUserId,
+            ProjectId = project.ProjectId,
+            RoleInProject = UserRol.Admin // Owner is Admin in the project
+        };
+
         projectRepository.Add(project);
+        userProjectRepository.Add(userProject);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return MapToDto(project);
@@ -101,11 +110,7 @@ public class ProjectService(
             throw new NotFoundException("Project not found.");
         }
 
-        // Check authorization: only owner
-        if (project.OwnerId != actorUserId)
-        {
-            throw new ForbiddenException("Only the project owner can update the project.");
-        }
+        await EnsureActorCanManageProjectAsync(project, actorUserId, cancellationToken, "Only the project owner or a project admin/coordinator can update the project.");
 
         // Update fields
         if (request.Name is not null)
@@ -147,11 +152,7 @@ public class ProjectService(
             throw new NotFoundException("Project not found.");
         }
 
-        // Check authorization: only owner
-        if (project.OwnerId != actorUserId)
-        {
-            throw new ForbiddenException("Only the project owner can delete the project.");
-        }
+        await EnsureActorCanManageProjectAsync(project, actorUserId, cancellationToken, "Only the project owner or a project admin/coordinator can delete the project.");
 
         projectRepository.Delete(project);
         await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -172,21 +173,17 @@ public class ProjectService(
             throw new NotFoundException("Project not found.");
         }
 
-        // Check authorization: only owner
-        if (project.OwnerId != actorUserId)
-        {
-            throw new ForbiddenException("Only the project owner can add members.");
-        }
+        await EnsureActorCanManageMembersAsync(project, actorUserId, cancellationToken, "Only the project owner or a project admin/coordinator can add members.");
 
         // Check if user exists
-        var user = await userRepository.GetById(request.UserId, cancellationToken);
+        var user = await userRepository.GetByEmail(request.Email, cancellationToken);
         if (user is null)
         {
             throw new NotFoundException("User not found.");
         }
 
         // Check if already a member
-        var existingMembership = await userProjectRepository.GetMembership(request.UserId, projectId, cancellationToken);
+        var existingMembership = await userProjectRepository.GetMembership(user.UserId, projectId, cancellationToken);
         if (existingMembership is not null)
         {
             throw new ValidationException("User is already a member of the project.");
@@ -195,7 +192,7 @@ public class ProjectService(
         // Add member
         var userProject = new UserProject
         {
-            UserId = request.UserId,
+            UserId = user.UserId,
             ProjectId = projectId,
             RoleInProject = request.Role
         };
@@ -222,11 +219,7 @@ public class ProjectService(
             throw new NotFoundException("Project not found.");
         }
 
-        // Check authorization: only owner
-        if (project.OwnerId != actorUserId)
-        {
-            throw new ForbiddenException("Only the project owner can remove members.");
-        }
+        await EnsureActorCanManageMembersAsync(project, actorUserId, cancellationToken, "Only the project owner or a project admin/coordinator can remove members.");
 
         // Cannot remove owner
         if (userId == project.OwnerId)
@@ -263,11 +256,7 @@ public class ProjectService(
             throw new NotFoundException("Project not found.");
         }
 
-        // Check authorization: only owner
-        if (project.OwnerId != actorUserId)
-        {
-            throw new ForbiddenException("Only the project owner can update member roles.");
-        }
+        await EnsureActorCanManageMembersAsync(project, actorUserId, cancellationToken, "Only the project owner or a project admin/coordinator can update member roles.");
 
         // Check if member
         var membership = await userProjectRepository.GetMembership(userId, projectId, cancellationToken);
@@ -289,4 +278,80 @@ public class ProjectService(
             project.EndDate,
             project.OwnerId
         );
+
+    public async Task<IEnumerable<ProjectMemberDto>> ListProjectMembersAsync(Guid projectId, Guid actorUserId, CancellationToken cancellationToken = default)
+    {
+        if (projectId == Guid.Empty)
+        {
+            throw new ValidationException("Project ID is required.");
+        }
+
+        var project = await projectRepository.GetById(projectId, cancellationToken);
+        if (project is null)
+        {
+            throw new NotFoundException("Project not found.");
+        }
+
+        // Check authorization: owner or member
+        if (project.OwnerId != actorUserId)
+        {
+            var membership = await userProjectRepository.GetMembership(actorUserId, projectId, cancellationToken);
+            if (membership is null)
+            {
+                throw new ForbiddenException("Access denied.");
+            }
+        }
+
+        var members = await userProjectRepository.ListMembers(projectId, cancellationToken);
+
+        return members.Select(m => new ProjectMemberDto(
+            m.UserId,
+            m.User!.Name,
+            m.User.Email,
+            m.RoleInProject
+        ));
+    }
+
+    private async Task EnsureActorCanManageProjectAsync(Project project, Guid actorUserId, CancellationToken cancellationToken, string forbiddenMessage)
+    {
+        var actor = await userRepository.GetById(actorUserId, cancellationToken);
+        if (actor is null)
+        {
+            throw new NotFoundException("Actor user not found.");
+        }
+
+        if (project.OwnerId == actorUserId)
+        {
+            return;
+        }
+
+        var membership = await userProjectRepository.GetMembership(actorUserId, project.ProjectId, cancellationToken);
+        if (membership is null || !IsPrivilegedProjectRole(membership.RoleInProject))
+        {
+            throw new ForbiddenException(forbiddenMessage);
+        }
+    }
+
+    private async Task EnsureActorCanManageMembersAsync(Project project, Guid actorUserId, CancellationToken cancellationToken, string forbiddenMessage)
+    {
+        var actor = await userRepository.GetById(actorUserId, cancellationToken);
+        if (actor is null)
+        {
+            throw new NotFoundException("Actor user not found.");
+        }
+
+        if (project.OwnerId == actorUserId)
+        {
+            return;
+        }
+
+        var membership = await userProjectRepository.GetMembership(actorUserId, project.ProjectId, cancellationToken);
+        if (membership is null || !IsPrivilegedProjectRole(membership.RoleInProject))
+        {
+            throw new ForbiddenException(forbiddenMessage);
+        }
+    }
+
+    private static bool IsPrivilegedProjectRole(UserRol role) =>
+        role is UserRol.Admin or UserRol.Coordinator;
 }

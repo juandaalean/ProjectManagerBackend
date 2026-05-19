@@ -14,6 +14,50 @@ public class TaskItemService(
     IUnitOfWork unitOfWork
 ) : ITaskItemService
 {
+    public async Task<TaskItemDto> AssignTaskItemAsync(Guid projectId, Guid taskItemId, Guid actorUserId, AssignTaskItemRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (projectId == Guid.Empty)
+        {
+            throw new ValidationException("Project ID is required.");
+        }
+
+        if (taskItemId == Guid.Empty)
+        {
+            throw new ValidationException("Task ID is required.");
+        }
+
+        var project = await projectRepository.GetById(projectId, cancellationToken);
+        if (project is null)
+        {
+            throw new NotFoundException("Project not found.");
+        }
+
+        var taskItem = await taskItemRepository.GetById(taskItemId, cancellationToken);
+        if (taskItem is null || taskItem.ProjectId != projectId)
+        {
+            throw new NotFoundException("Task not found.");
+        }
+
+        var actorMembership = await userProjectRepository.GetMembership(actorUserId, projectId, cancellationToken);
+        var actorIsOwner = project.OwnerId == actorUserId;
+        var actorIsPrivileged = actorIsOwner || (actorMembership is not null && IsPrivilegedRole(actorMembership.RoleInProject));
+
+        if (!actorIsPrivileged)
+        {
+            throw new ForbiddenException("Only admins or coordinators can assign tasks.");
+        }
+
+        await EnsureUserCanBeAssignedAsync(project, request.AssignedUserId, cancellationToken);
+
+        taskItem.AssignedUserId = request.AssignedUserId;
+        taskItemRepository.Update(taskItem);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return MapToDto(taskItem);
+    }
+
     public async Task<TaskItemDto> CreateTaskItemAsync(Guid projectId, CreateTaskItemRequest request, Guid actorUserId, CancellationToken cancellationToken = default)
     {
         if (projectId == Guid.Empty)
@@ -55,6 +99,8 @@ public class TaskItemService(
             TaskId = Guid.NewGuid(),
             Title = request.Title,
             Description = request.Description,
+            CreatedAt = DateTime.UtcNow,
+            CompletedAt = request.CompletedAt,
             State = request.TaskState,
             Priority = request.TaskPriority,
             ProjectId = projectId,
@@ -66,6 +112,31 @@ public class TaskItemService(
 
         return MapToDto(taskItem);
 
+    }
+
+    public async Task<IEnumerable<ProjectTaskItemsDto>> ListTaskItemsByProjectsAsync(IEnumerable<Guid> projectIds, Guid actorUserId, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(projectIds);
+
+        var distinctProjectIds = projectIds
+            .Where(projectId => projectId != Guid.Empty)
+            .Distinct()
+            .ToArray();
+
+        if (distinctProjectIds.Length == 0)
+        {
+            throw new ValidationException("At least one project ID is required.");
+        }
+
+        var tasksByProject = new List<ProjectTaskItemsDto>(distinctProjectIds.Length);
+
+        foreach (var projectId in distinctProjectIds)
+        {
+            var tasks = await ListTaskItemsInProjectAsync(projectId, actorUserId, null, cancellationToken);
+            tasksByProject.Add(new ProjectTaskItemsDto(projectId, tasks));
+        }
+
+        return tasksByProject;
     }
 
     public async Task<TaskItemDto> GetTaskItemItemAsync(Guid projectId, Guid taskItemId, Guid actorUserId, CancellationToken cancellationToken = default)
@@ -183,7 +254,9 @@ public class TaskItemService(
             var tryingToChangeRestrictedFields =
                 request.AssignedUserId.HasValue ||
                 request.Title is not null ||
-                request.Description is not null;
+                request.Description is not null ||
+                request.CreatedAt.HasValue ||
+                request.CompletedAt.HasValue;
 
             if (tryingToChangeRestrictedFields)
             {
@@ -215,6 +288,16 @@ public class TaskItemService(
         if (request.TaskPriority.HasValue)
         {
             taskItem.Priority = request.TaskPriority.Value;
+        }
+
+        if (request.CreatedAt.HasValue)
+        {
+            taskItem.CreatedAt = request.CreatedAt.Value;
+        }
+
+        if (request.CompletedAt.HasValue)
+        {
+            taskItem.CompletedAt = request.CompletedAt.Value;
         }
 
         taskItemRepository.Update(taskItem);
@@ -291,7 +374,9 @@ public class TaskItemService(
         taskItem.State,
         taskItem.Priority,
         taskItem.ProjectId,
-        taskItem.AssignedUserId
+        taskItem.AssignedUserId,
+        taskItem.CreatedAt,
+        taskItem.CompletedAt
     );
 
 }

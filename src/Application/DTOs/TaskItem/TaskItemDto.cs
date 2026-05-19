@@ -9,5 +9,7 @@ public record TaskItemDto(
     TaskState TaskState,
     TaskPriority TaskPriority,
     Guid ProjectId,
-    Guid AssignedUserId
+    Guid AssignedUserId,
+    DateTime CreatedAt = default,
+    DateTime? CompletedAt = null
 );

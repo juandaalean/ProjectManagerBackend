@@ -10,7 +10,8 @@ public class AddProjectMemberRequestValidator : AbstractValidator<AddProjectMemb
     /// </summary>
     public AddProjectMemberRequestValidator()
     {
-        RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("User ID is required.");
+        RuleFor(x => x.Email)
+            .NotEmpty().WithMessage("Email is required.")
+            .EmailAddress().WithMessage("Email must be a valid email address.");
     }
 }
