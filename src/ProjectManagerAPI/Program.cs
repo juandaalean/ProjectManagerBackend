@@ -1,7 +1,9 @@
 using Application.DependencyInjection;
 using FluentValidation.AspNetCore;
+using Infrastructure.Data;
 using Infrastructure.DependencyInjection;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ProjectManagerAPI;
 using ProjectManagerAPI.Options;
 using Security.DependencyInjection;
@@ -64,6 +66,12 @@ builder.Services.AddSecurity();
 builder.Services.AddApiAuthentication(builder.Configuration);
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ProjectManagerContext>();
+    await dbContext.Database.MigrateAsync();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
