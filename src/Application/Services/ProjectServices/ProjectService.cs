@@ -34,6 +34,7 @@ public class ProjectService(
             Description = request.Description,
             StartDate = request.StartDate,
             EndDate = request.EndDate,
+            State = ProjectState.Active,
             OwnerId = actorUserId
         };
 
@@ -86,7 +87,8 @@ public class ProjectService(
             filter = new ProjectListFilter(
                 query.SearchTerm,
                 query.StartDateFrom,
-                query.StartDateTo);
+                query.StartDateTo,
+                query.State);
         }
 
         var projects = await projectRepository.ListByUser(actorUserId, filter, cancellationToken);
@@ -131,6 +133,11 @@ public class ProjectService(
         if (request.EndDate.HasValue)
         {
             project.EndDate = request.EndDate.Value;
+        }
+
+        if (request.State.HasValue)
+        {
+            project.State = request.State.Value;
         }
 
         projectRepository.Update(project);
@@ -276,7 +283,8 @@ public class ProjectService(
             project.Description,
             project.StartDate,
             project.EndDate,
-            project.OwnerId
+            project.OwnerId,
+            project.State
         );
 
     public async Task<IEnumerable<ProjectMemberDto>> ListProjectMembersAsync(Guid projectId, Guid actorUserId, CancellationToken cancellationToken = default)

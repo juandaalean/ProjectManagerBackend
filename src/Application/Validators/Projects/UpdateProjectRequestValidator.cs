@@ -29,5 +29,10 @@ public class UpdateProjectRequestValidator : AbstractValidator<UpdateProjectRequ
             .Must(x => x.StartDate <= x.EndDate)
             .When(x => x.StartDate.HasValue && x.EndDate.HasValue)
             .WithMessage("Start date must be before or equal to end date.");
+
+        RuleFor(x => x.State)
+            .IsInEnum()
+            .When(x => x.State.HasValue)
+            .WithMessage("Project state is invalid.");
     }
 }
