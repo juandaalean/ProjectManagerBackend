@@ -44,6 +44,11 @@ public class ProjectRepository(ProjectManagerContext context) : IProjectReposito
             {
                 query = query.Where(p => p.StartDate <= filter.StartDateTo.Value);
             }
+
+                if (filter.State.HasValue)
+                {
+                    query = query.Where(p => p.State == filter.State.Value);
+                }
         }
 
         return await query.ToListAsync(cancellationToken);

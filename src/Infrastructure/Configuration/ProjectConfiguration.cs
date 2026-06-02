@@ -1,4 +1,5 @@
 using Domain.Entities;
+using Domain.Enum;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -26,6 +27,11 @@ namespace Infrastructure.Configuration
             
             builder.Property(p => p.EndDate)
                 .IsRequired();
+
+            builder.Property(p => p.State)
+                .IsRequired()
+                .HasConversion<string>()
+                .HasDefaultValue(ProjectState.Active);
         }    
     }
 }

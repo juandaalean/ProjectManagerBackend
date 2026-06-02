@@ -1,5 +1,6 @@
 using Application.Services;
 using Application.Services.CommentServices;
+using Application.Services.SprintServices;
 using Application.Services.TaskItemServices;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,6 +25,7 @@ public static class ApplicationServiceRegistration
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ITaskItemService, TaskItemService>();
         services.AddScoped<ICommentService, CommentService>();
+        services.AddScoped<ISprintService, SprintService>();
 
         return services;
     }

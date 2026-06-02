@@ -19,5 +19,10 @@ public class ListProjectsQueryValidator : AbstractValidator<ListProjectsQuery>
             .Must(x => x.StartDateFrom <= x.StartDateTo)
             .When(x => x.StartDateFrom.HasValue && x.StartDateTo.HasValue)
             .WithMessage("StartDateFrom must be before or equal to StartDateTo.");
+
+        RuleFor(x => x.State)
+            .IsInEnum()
+            .When(x => x.State.HasValue)
+            .WithMessage("Project state is invalid.");
     }
 }

@@ -33,6 +33,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<ICommentRepository, CommentRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IUserProjectRepository, UserProjectRepository>();
+        services.AddScoped<ISprintRepository, SprintRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;

@@ -45,6 +45,18 @@ public class TaskItemRepository(ProjectManagerContext context) : ITaskItemReposi
             {
                 query = query.Where(t => t.AssignedUserId == filter.AssignedUserId.Value);
             }
+
+            if (filter.SprintId.HasValue)
+            {
+                if (filter.SprintId.Value == Guid.Empty)
+                {
+                    query = query.Where(t => t.SprintId == null);
+                }
+                else
+                {
+                    query = query.Where(t => t.SprintId == filter.SprintId.Value);
+                }
+            }
         }
 
         return await query.ToListAsync(cancellationToken);

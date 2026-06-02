@@ -19,7 +19,7 @@ public class CreateTaskItemRequestValidator : AbstractValidator<CreateTaskItemRe
             .MaximumLength(255).WithMessage("Task title must not exceed 255 characters.");
 
         RuleFor(x => x.Description)
-            .MaximumLength(500).WithMessage("Task description must not exceed 500 characters.")
+            .MaximumLength(8000).WithMessage("Task description must not exceed 8000 characters.")
             .When(x => x.Description is not null);
     }
 }
