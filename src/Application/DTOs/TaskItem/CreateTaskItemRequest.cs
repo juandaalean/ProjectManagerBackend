@@ -12,6 +12,7 @@ namespace Application.DTOs.TaskItem
         string? Description,
         TaskPriority TaskPriority,
         TaskState TaskState = TaskState.Active,
-        DateTime? CompletedAt = null
+        DateTime? CompletedAt = null,
+        Guid? SprintId = null
     );
 }

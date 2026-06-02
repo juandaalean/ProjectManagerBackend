@@ -20,12 +20,17 @@ namespace Infrastructure.Configuration
                 .HasForeignKey(t => t.AssignedUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.HasOne(t => t.Sprint)
+                .WithMany(s => s.Tasks)
+                .HasForeignKey(t => t.SprintId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             builder.Property(t => t.Title)
                 .IsRequired()
                 .HasMaxLength(255);
 
             builder.Property(t => t.Description)
-                .HasMaxLength(500);
+                .HasColumnType("text");
 
             builder.Property(t => t.CreatedAt)
                 .IsRequired();

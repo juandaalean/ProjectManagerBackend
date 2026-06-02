@@ -13,6 +13,8 @@ namespace Application.DTOs.TaskItem
         TaskState? TaskState,
         TaskPriority? TaskPriority,
         DateTime? CreatedAt = null,
-        DateTime? CompletedAt = null
+        DateTime? CompletedAt = null,
+        Guid? SprintId = null,
+        bool ClearSprint = false
     );
 }

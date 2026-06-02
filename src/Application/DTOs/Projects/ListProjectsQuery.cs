@@ -1,4 +1,5 @@
 namespace Application.DTOs.Projects;
+using Domain.Enum;
 
 /// <summary>
 /// Query DTO for listing projects.
@@ -6,5 +7,6 @@ namespace Application.DTOs.Projects;
 public record ListProjectsQuery(
     string? SearchTerm = null,
     DateTime? StartDateFrom = null,
-    DateTime? StartDateTo = null
+    DateTime? StartDateTo = null,
+    ProjectState? State = null
 );

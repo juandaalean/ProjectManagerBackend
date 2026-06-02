@@ -18,6 +18,9 @@ namespace Domain.Entities
         public Guid AssignedUserId { get; set; }
         public User AssignedUser { get; set; } = null!;
 
+        public Guid? SprintId { get; set; }
+        public Sprint? Sprint { get; set; }
+
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
     }
 }

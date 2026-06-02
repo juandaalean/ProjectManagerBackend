@@ -19,13 +19,17 @@ public class TaskItemsController(ITaskItemService taskItemService) : ControllerB
     /// Gets the tasks for multiple projects the current user can access.
     /// </summary>
     /// <param name="projectIds">The project IDs to query.</param>
+    /// <param name="query">Optional filters (search term, state, priority, assigned user, sprint).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A collection of tasks grouped by project.</returns>
     [HttpGet("by-projects")]
-    public async Task<ActionResult<IEnumerable<ProjectTaskItemsDto>>> GetTasksByProjects([FromQuery] Guid[] projectIds, CancellationToken cancellationToken)
+    public async Task<ActionResult<IEnumerable<ProjectTaskItemsDto>>> GetTasksByProjects(
+        [FromQuery] Guid[] projectIds,
+        [FromQuery] ListTaskItemsQuery? query,
+        CancellationToken cancellationToken)
     {
         var actorUserId = GetActorUserId();
-        var tasksByProject = await taskItemService.ListTaskItemsByProjectsAsync(projectIds, actorUserId, cancellationToken);
+        var tasksByProject = await taskItemService.ListTaskItemsByProjectsAsync(projectIds, actorUserId, query, cancellationToken);
         return Ok(tasksByProject);
     }
 

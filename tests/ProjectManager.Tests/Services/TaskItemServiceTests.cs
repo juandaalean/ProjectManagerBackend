@@ -14,6 +14,7 @@ public class TaskItemServiceTests
     private readonly Mock<IProjectRepository> _projectRepository = new();
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<IUserProjectRepository> _userProjectRepository = new();
+    private readonly Mock<ISprintRepository> _sprintRepository = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
 
     private TaskItemService CreateService()
@@ -23,6 +24,7 @@ public class TaskItemServiceTests
             _projectRepository.Object,
             _userRepository.Object,
             _userProjectRepository.Object,
+            _sprintRepository.Object,
             _unitOfWork.Object);
     }
 

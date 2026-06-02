@@ -1,29 +1,29 @@
-using Application.DTOs.Projects;
+using Application.DTOs.Sprints;
 using FluentValidation;
 
-namespace Application.Validators.Projects;
+namespace Application.Validators.Sprints;
 
-public class UpdateProjectRequestValidator : AbstractValidator<UpdateProjectRequest>
+public class UpdateSprintRequestValidator : AbstractValidator<UpdateSprintRequest>
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="UpdateProjectRequestValidator"/> class.
+    /// Initializes a new instance of the <see cref="UpdateSprintRequestValidator"/> class.
     /// </summary>
-    public UpdateProjectRequestValidator()
+    public UpdateSprintRequestValidator()
     {
         RuleFor(x => x.Name)
             .Must(name => !string.IsNullOrWhiteSpace(name))
             .When(x => x.Name is not null)
-            .WithMessage("Project name is required.");
+            .WithMessage("Sprint name is required.");
 
         RuleFor(x => x.Name)
             .MaximumLength(255)
             .When(x => x.Name is not null)
-            .WithMessage("Project name must not exceed 255 characters.");
+            .WithMessage("Sprint name must not exceed 255 characters.");
 
-        RuleFor(x => x.Description)
+        RuleFor(x => x.Goal)
             .MaximumLength(500)
-            .When(x => x.Description is not null)
-            .WithMessage("Project description must not exceed 500 characters.");
+            .When(x => x.Goal is not null)
+            .WithMessage("Sprint goal must not exceed 500 characters.");
 
         RuleFor(x => x)
             .Must(x => x.StartDate <= x.EndDate)
@@ -33,6 +33,6 @@ public class UpdateProjectRequestValidator : AbstractValidator<UpdateProjectRequ
         RuleFor(x => x.State)
             .IsInEnum()
             .When(x => x.State.HasValue)
-            .WithMessage("Project state is invalid.");
+            .WithMessage("Sprint state is invalid.");
     }
 }

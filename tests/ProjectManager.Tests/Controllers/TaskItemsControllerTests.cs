@@ -19,7 +19,7 @@ public class TaskItemsControllerTests
         var projectIdTwo = Guid.NewGuid();
 
         _taskItemService
-            .Setup(x => x.ListTaskItemsByProjectsAsync(It.IsAny<IEnumerable<Guid>>(), actorUserId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListTaskItemsByProjectsAsync(It.IsAny<IEnumerable<Guid>>(), actorUserId, It.IsAny<ListTaskItemsQuery?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[]
             {
                 new ProjectTaskItemsDto(projectIdOne, new[] { new TaskItemDto(Guid.NewGuid(), "Task 1", null, Domain.Enum.TaskState.Active, Domain.Enum.TaskPriority.Low, projectIdOne, actorUserId) }),
@@ -29,7 +29,7 @@ public class TaskItemsControllerTests
         var controller = new TaskItemsController(_taskItemService.Object);
         ControllerTestHelper.SetUser(controller, actorUserId);
 
-        var result = await controller.GetTasksByProjects(new[] { projectIdOne, projectIdTwo }, CancellationToken.None);
+        var result = await controller.GetTasksByProjects(new[] { projectIdOne, projectIdTwo }, null, CancellationToken.None);
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
         var payload = Assert.IsAssignableFrom<IEnumerable<ProjectTaskItemsDto>>(ok.Value);
@@ -42,7 +42,7 @@ public class TaskItemsControllerTests
         var controller = new TaskItemsController(_taskItemService.Object);
         ControllerTestHelper.SetUser(controller, null);
 
-        var act = () => controller.GetTasksByProjects(new[] { Guid.NewGuid() }, CancellationToken.None);
+        var act = () => controller.GetTasksByProjects(new[] { Guid.NewGuid() }, null, CancellationToken.None);
 
         await Assert.ThrowsAsync<UnauthorizedException>(act);
     }

@@ -1,4 +1,5 @@
 namespace Application.DTOs.Projects;
+using Domain.Enum;
 
 /// <summary>
 /// Response DTO for project information.
@@ -9,5 +10,6 @@ public record ProjectDto(
     string? Description,
     DateTime StartDate,
     DateTime EndDate,
-    Guid OwnerId
+    Guid OwnerId,
+    ProjectState State = ProjectState.Active
 );
