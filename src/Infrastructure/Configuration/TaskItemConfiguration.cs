@@ -30,7 +30,7 @@ namespace Infrastructure.Configuration
                 .HasMaxLength(255);
 
             builder.Property(t => t.Description)
-                .HasMaxLength(500);
+                .HasColumnType("text");
 
             builder.Property(t => t.CreatedAt)
                 .IsRequired();
