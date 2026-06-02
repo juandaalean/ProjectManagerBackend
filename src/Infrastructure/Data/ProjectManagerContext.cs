@@ -17,5 +17,6 @@ namespace Infrastructure.Data
         public DbSet<TaskItem> TaskItems { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<UserProject> UserProjects { get; set; }
+        public DbSet<Sprint> Sprints { get; set; }
     }
 }

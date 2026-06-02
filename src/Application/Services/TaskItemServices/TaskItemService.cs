@@ -11,6 +11,7 @@ public class TaskItemService(
     IProjectRepository projectRepository,
     IUserRepository userRepository,
     IUserProjectRepository userProjectRepository,
+    ISprintRepository sprintRepository,
     IUnitOfWork unitOfWork
 ) : ITaskItemService
 {
@@ -94,6 +95,11 @@ public class TaskItemService(
 
         await EnsureUserCanBeAssignedAsync(project, request.AssignedUserId, cancellationToken);
 
+        if (request.SprintId.HasValue)
+        {
+            await EnsureSprintBelongsToProjectAsync(request.SprintId.Value, projectId, cancellationToken);
+        }
+
         var taskItem = new TaskItem
         {
             TaskId = Guid.NewGuid(),
@@ -104,7 +110,8 @@ public class TaskItemService(
             State = request.TaskState,
             Priority = request.TaskPriority,
             ProjectId = projectId,
-            AssignedUserId = request.AssignedUserId
+            AssignedUserId = request.AssignedUserId,
+            SprintId = request.SprintId
         };
 
         taskItemRepository.Add(taskItem);
@@ -114,7 +121,7 @@ public class TaskItemService(
 
     }
 
-    public async Task<IEnumerable<ProjectTaskItemsDto>> ListTaskItemsByProjectsAsync(IEnumerable<Guid> projectIds, Guid actorUserId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<ProjectTaskItemsDto>> ListTaskItemsByProjectsAsync(IEnumerable<Guid> projectIds, Guid actorUserId, ListTaskItemsQuery? query = null, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(projectIds);
 
@@ -132,7 +139,7 @@ public class TaskItemService(
 
         foreach (var projectId in distinctProjectIds)
         {
-            var tasks = await ListTaskItemsInProjectAsync(projectId, actorUserId, null, cancellationToken);
+            var tasks = await ListTaskItemsInProjectAsync(projectId, actorUserId, query, cancellationToken);
             tasksByProject.Add(new ProjectTaskItemsDto(projectId, tasks));
         }
 
@@ -205,7 +212,8 @@ public class TaskItemService(
                 query.SearchTerm,
                 query.TaskState,
                 query.TaskPriority,
-                query.AssignedUser);
+                query.AssignedUser,
+                query.SprintId);
         }
 
         var tasks = await taskItemRepository.ListByProject(projectId, filter, cancellationToken);
@@ -256,7 +264,9 @@ public class TaskItemService(
                 request.Title is not null ||
                 request.Description is not null ||
                 request.CreatedAt.HasValue ||
-                request.CompletedAt.HasValue;
+                request.CompletedAt.HasValue ||
+                request.SprintId.HasValue ||
+                request.ClearSprint;
 
             if (tryingToChangeRestrictedFields)
             {
@@ -268,6 +278,16 @@ public class TaskItemService(
         {
             await EnsureUserCanBeAssignedAsync(project, request.AssignedUserId.Value, cancellationToken);
             taskItem.AssignedUserId = request.AssignedUserId.Value;
+        }
+
+        if (request.ClearSprint)
+        {
+            taskItem.SprintId = null;
+        }
+        else if (request.SprintId.HasValue)
+        {
+            await EnsureSprintBelongsToProjectAsync(request.SprintId.Value, projectId, cancellationToken);
+            taskItem.SprintId = request.SprintId.Value;
         }
 
         if (request.Title is not null)
@@ -363,6 +383,15 @@ public class TaskItemService(
         }
     }
 
+    private async Task EnsureSprintBelongsToProjectAsync(Guid sprintId, Guid projectId, CancellationToken cancellationToken)
+    {
+        var sprint = await sprintRepository.GetById(sprintId, cancellationToken);
+        if (sprint is null || sprint.ProjectId != projectId)
+        {
+            throw new ValidationException("Sprint does not belong to the project.");
+        }
+    }
+
     private static bool IsPrivilegedRole(UserRol role) =>
         role is UserRol.Admin or UserRol.Coordinator;
 
@@ -376,7 +405,8 @@ public class TaskItemService(
         taskItem.ProjectId,
         taskItem.AssignedUserId,
         taskItem.CreatedAt,
-        taskItem.CompletedAt
+        taskItem.CompletedAt,
+        taskItem.SprintId
     );
 
 }

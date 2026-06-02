@@ -6,5 +6,6 @@ public record ListTaskItemsQuery(
     string? SearchTerm = null,
     TaskState? TaskState = null,
     TaskPriority? TaskPriority = null,
-    Guid? AssignedUser = null
+    Guid? AssignedUser = null,
+    Guid? SprintId = null
 );

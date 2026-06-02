@@ -11,5 +11,6 @@ public record TaskItemDto(
     Guid ProjectId,
     Guid AssignedUserId,
     DateTime CreatedAt = default,
-    DateTime? CompletedAt = null
+    DateTime? CompletedAt = null,
+    Guid? SprintId = null
 );

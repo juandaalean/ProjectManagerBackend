@@ -8,7 +8,7 @@ namespace Application.Services.TaskItemServices
 
         Task<TaskItemDto> AssignTaskItemAsync(Guid projectId, Guid taskItemId, Guid actorUserId, AssignTaskItemRequest request, CancellationToken cancellationToken = default);
 
-        Task<IEnumerable<ProjectTaskItemsDto>> ListTaskItemsByProjectsAsync(IEnumerable<Guid> projectIds, Guid actorUserId, CancellationToken cancellationToken = default);
+        Task<IEnumerable<ProjectTaskItemsDto>> ListTaskItemsByProjectsAsync(IEnumerable<Guid> projectIds, Guid actorUserId, ListTaskItemsQuery? query = null, CancellationToken cancellationToken = default);
 
         Task<TaskItemDto> GetTaskItemItemAsync(Guid projectId, Guid taskItemId, Guid actorUserId, CancellationToken cancellationToken = default);
 
