@@ -8,6 +8,7 @@ namespace Domain.Entities
         public string Title { get; set; } = null!;
         public string? Description { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime? StartAt { get; set; }
         public DateTime? CompletedAt { get; set; }
         public TaskState State { get; set; }
         public TaskPriority Priority { get; set; }

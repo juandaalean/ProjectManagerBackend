@@ -80,7 +80,15 @@ public class AuthService(
             token.AccessToken,
             token.TokenType,
             token.ExpiresAtUtc,
-            new AuthUserDto(user.UserId, user.Name, user.Email, user.Rol.ToString()));
+            new AuthUserDto(
+                user.UserId,
+                user.Name,
+                user.Email,
+                user.Rol.ToString(),
+                user.Plan,
+                user.ProjectLimit
+            )
+        );
     }
 
     private static string NormalizeEmail(string email)

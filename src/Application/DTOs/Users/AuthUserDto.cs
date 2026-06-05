@@ -7,5 +7,7 @@ public record AuthUserDto(
     Guid UserId,
     string Name,
     string Email,
-    string Rol
+    string Rol,
+    string Plan,
+    int ProjectLimit
 );

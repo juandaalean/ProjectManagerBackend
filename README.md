@@ -150,18 +150,16 @@ Most endpoints require `Authorization: Bearer {token}`.
   - `DELETE /api/projects/{projectId}/tasks/{taskItemId}`
   - `PUT /api/projects/{projectId}/tasks/{taskItemId}/assignee`
 
-  **Sprints**
-  -`GET /api/projects/{projectId}/sprints`
-  -`GET /api/projects/{projectId}/sprints/board`
-  -`GET /api/projects/{projectId}/sprints/{sprintId}`
-  -`GET /api/projects/{projectId}/sprints/{sprintId}/tasks`
-  -`POST /api/projects/{projectId}/sprints`
-  -`PUT /api/projects/{projectId}/sprints/{sprintId}`
-  -`DELETE /api/projects/{projectId}/sprints/{sprintId}`
-  -`PUT /api/projects/{projectId}/sprints/{sprintId}/tasks/{taskItemId}`
-  -`DELETE /api/projects/{projectId}/sprints/{sprintId}/tasks/{taskItemId}`
-
-
+- **Sprints**
+  - `GET /api/projects/{projectId}/sprints`
+  - `GET /api/projects/{projectId}/sprints/board`
+  - `GET /api/projects/{projectId}/sprints/{sprintId}`
+  - `GET /api/projects/{projectId}/sprints/{sprintId}/tasks`
+  - `POST /api/projects/{projectId}/sprints`
+  - `PUT /api/projects/{projectId}/sprints/{sprintId}`
+  - `DELETE /api/projects/{projectId}/sprints/{sprintId}`
+  - `PUT /api/projects/{projectId}/sprints/{sprintId}/tasks/{taskItemId}`
+  - `DELETE /api/projects/{projectId}/sprints/{sprintId}/tasks/{taskItemId}`
 
 - **Task Comments**
   - `GET /api/projects/{projectId}/tasks/{taskItemId}/comments`

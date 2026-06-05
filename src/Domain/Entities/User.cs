@@ -9,6 +9,8 @@ namespace Domain.Entities
         public string Email { get; set; } = null!;
         public string PasswordHash { get; set; } = null!;
         public UserRol Rol { get; set; }
+        public string Plan { get; set; } = "free";
+        public int ProjectLimit { get; set; } = 3;
 
         public ICollection<UserProject> UserProjects {get; set;} = new List<UserProject>();
         public ICollection<TaskItem> AssignedTasks {get; set;} = new List<TaskItem>();

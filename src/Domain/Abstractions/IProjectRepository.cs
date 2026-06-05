@@ -44,4 +44,12 @@ public interface IProjectRepository
     /// </summary>
     /// <param name="project">The project to delete.</param>
     void Delete(Project project);
+
+    /// <summary>
+    /// Counts the number of projects accessible by a specific user.
+    /// </summary>
+    /// <param name="userId">The user ID.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The number of projects.</returns>
+    Task<int> CountByUser(Guid userId, CancellationToken cancellationToken = default);
 }
