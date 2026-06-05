@@ -63,4 +63,10 @@ public class ProjectRepository(ProjectManagerContext context) : IProjectReposito
     {
         context.Projects.Remove(project);
     }
+
+    public async Task<int> CountByUser(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await context.Projects
+            .CountAsync(p => p.OwnerId == userId || p.UserProjects.Any(up => up.UserId == userId), cancellationToken);
+    }
 }
