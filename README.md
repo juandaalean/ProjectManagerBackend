@@ -1,307 +1,407 @@
 # Project Manager Backend
 
-## 🚀 Project Overview
+A production-style REST API for a collaborative project management platform, built with **.NET 8** and **ASP.NET Core**, and designed around **Clean Architecture** principles. The service powers projects, tasks, sprints, and team discussions for a frontend client, with a clear separation of concerns, JWT-based authentication, and role-aware authorization across shared resources.
 
-A backend API built with .NET 8 and ASP.NET Core that simulates a real-world project management system (similar to tools like Trello or Jira).
+> **Status:** Portfolio project · v1.1.2 · actively maintained on the `dev` branch.
 
-This project focuses on designing a scalable and maintainable architecture using Clean Architecture principles, while also exploring how AI tools can enhance the software development workflow.
+---
+
+## Table of Contents
+
+- [Highlights](#highlights)
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
+- [Features](#features)
+- [Authorization Model](#authorization-model)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Local Setup](#local-setup)
+  - [Database & Migrations](#database--migrations)
+  - [Docker](#docker)
+  - [Deployment (Neon)](#deployment-neon)
+- [Configuration](#configuration)
+- [Running the Tests](#running-the-tests)
+- [CI & Code Coverage](#ci--code-coverage)
+- [API Reference](#api-reference)
+- [Project Structure](#project-structure)
+- [AI-Assisted Development](#ai-assisted-development)
+- [Roadmap](#roadmap)
+- [What I Learned](#what-i-learned)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
+## Highlights
+
+- **Clean Architecture** with explicit `Domain`, `Application`, `Infrastructure`, `Security`, and `ProjectManagerAPI` projects.
+- **JWT authentication** with role-based access control on project resources.
+- **Project membership** model that gates access to tasks, sprints, and comments.
+- **Sprint board** endpoint that returns sprints and their tasks, plus the project backlog, in a single payload.
+- **Cross-project task query** to fetch tasks for multiple projects in one call.
+- **Container-ready**: multi-stage Dockerfile and `docker-compose.yml` for production.
+- **Serverless-ready**: works out of the box with [Neon](https://neon.tech) as a managed PostgreSQL provider.
+- **Tested**: xUnit + Moq unit tests for every service and controller, with coverage reported on every PR.
+
+---
 
 ## Tech Stack
 
-- **Framework**: .NET 8
-- **Web**: ASP.NET Core
-- **ORM**: Entity Framework Core
-- **Database**: PostgreSQL
-- **Docs**: Swagger / OpenAPI
+| Layer            | Technology                                                                 |
+|------------------|----------------------------------------------------------------------------|
+| Runtime          | .NET 8 (`net8.0`)                                                          |
+| Web framework    | ASP.NET Core, MVC Controllers, Swagger / Swashbuckle                        |
+| Data access      | Entity Framework Core 8                                                    |
+| Database         | PostgreSQL 12+ (Neon-compatible)                                           |
+| Validation       | FluentValidation                                                           |
+| Auth             | ASP.NET Identity `PasswordHasher`, custom JWT token service                |
+| Testing          | xUnit, Moq, FluentAssertions                                               |
+| Coverage         | coverlet + ReportGenerator + CodeCoverageSummary (PR comment bot)          |
+| Containerization | Docker, Docker Compose                                                     |
+| CI               | GitHub Actions (Ubuntu, .NET 8.0.x)                                        |
 
+---
 
-## Core Features
+## Architecture
 
-### 🔐 Authentication & Authorization
-- JWT-based authentication
-- Role-based access control
+The solution is split into five projects following **Clean Architecture / Onion Architecture** conventions. Dependencies always point inward toward `Domain`.
 
-### 📁 Project Management
-- Create, update, delete projects
-- Shared projects between users
+**Layer responsibilities:**
 
-### ✅ Task Management
-- Assign tasks to users
-- Task states and priorities
+- **Domain** – Pure C# entities (`User`, `Project`, `TaskItem`, `Comment`, `UserProject`, `Sprint`), enums, and repository abstractions. No external dependencies.
+- **Application** – Use cases implemented as services, DTOs, FluentValidation validators, and domain exceptions.
+- **Infrastructure** – EF Core `DbContext`, entity configurations, migrations, and concrete repository implementations.
+- **Security** – `JwtTokenService` and ASP.NET Identity `PasswordHasher` factored out for reuse and testing.
+- **ProjectManagerAPI** – Composition root, controllers, middleware (`ExceptionHandlingMiddleware`, CORS), Swagger, JWT options, and auth setup.
 
-### 💬 Comments System
-- Add and retrieve comments on tasks
-- Access restricted to project members
+---
 
-## Recent Updates
+## Features
 
-- Implemented task comments endpoints (list + create) under project tasks.
-- Added comment DTOs, service layer, repository interface, and EF Core repository implementation.
-- Enforced authorization for comments and tasks: **project owner or project member**.
-- Added task comment update and delete endpoints.
-- Comment permissions:
-  - Edit comment: only the comment author.
-  - Delete comment: only the comment author with **Admin** role in the project.
-- Implemented CORS into API to recive Frontend local port
+### Authentication & Authorization
+- Email/password registration and login, returning a signed JWT.
+- Stateless auth via `Authorization: Bearer {token}`.
+- Acting user resolved from the `NameIdentifier` claim on every request.
 
-## 🤖 AI-Assisted Development
+### Projects
+- Create, update, delete, and list projects.
+- Project membership with `Admin` and `Member` roles.
+- Add, remove, and update the role of a project member.
 
-This project was developed using AI as an active part of the workflow, not just as a helper.
+### Tasks
+- CRUD over tasks scoped to a project.
+- Task assignment to any project member.
+- Filtered listing (`state`, `priority`, `assignee`, `sprint`, search term).
+- Cross-project task query: `GET /api/task-items/by-projects` returns tasks grouped by project.
 
-Tools and approaches used:
-- Microsoft Learn MCP Server
-- GitHub MCP Server (PR automation)
-- OpenCode environment experimentation
+### Sprints
+- Full CRUD on sprints within a project.
+- **Sprint board** view: `GET /api/projects/{id}/sprints/board` returns every sprint with its tasks plus the project backlog.
+- Move tasks in and out of sprints; deleting a sprint pushes its tasks back to the backlog.
 
-Focus:
-- Faster iteration
-- Better understanding of concepts
-- Guided learning and architecture decisions
+### Comments
+- CRUD on task comments scoped to a project/task.
+- Authorization-aware: edit author-only, delete author + project `Admin`.
 
-## Quickstart
+### User profile
+- `GET /api/users/me/stats` returns the current user's project count, plan, and project limit.
+
+### Cross-cutting
+- Centralized exception handling that emits `application/problem+json` responses.
+- FluentValidation auto-validation for request DTOs.
+- CORS preconfigured for the local Vercel-style frontend (`http://localhost:5173`) and the deployed frontend on Vercel.
+
+---
+
+## Authorization Model
+
+The API derives the acting user from the JWT `NameIdentifier` claim on every protected request. Project-scoped resources follow a layered model:
+
+- **Access gate (tasks, sprints, comments):** the actor must be either the project owner or an active member of the project.
+- **Task comment write rules:**
+  - **Edit** → only the comment author.
+  - **Delete** → only the comment author **and** a project member with the `Admin` role.
+- **Project member management** → restricted to the project owner (and admins where applicable).
+
+Unauthorized access throws domain exceptions (`NotFoundException`, `UnauthorizedException`, `ForbiddenException`) that the `ExceptionHandlingMiddleware` translates into proper HTTP responses.
+
+---
+
+## Getting Started
 
 ### Prerequisites
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
-- [PostgreSQL](https://www.postgresql.org/download/) (12+)
+- [PostgreSQL 12+](https://www.postgresql.org/download/) (or a [Neon](https://neon.tech) connection string)
+- [Docker](https://www.docker.com/) (optional, for containerized runs)
 
-### Setup
+### Local Setup
 
-1. Restore packages:
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/juandaalean/ProjectManagerBackend.git
+   cd ProjectManagerBackend
+   ```
+
+2. **Restore dependencies**
+
    ```bash
    dotnet restore ProjectManagerAPI.sln
    ```
 
-2. Configure settings (local):
-   - Connection string: `ConnectionStrings:DefaultConnection`
-   - JWT settings: `Jwt:Issuer`, `Jwt:Audience`, `Jwt:SecretKey`, `Jwt:AccessTokenExpirationMinutes`
+3. **Configure your environment**
 
-   See `src/ProjectManagerAPI/appsettings.json` for the default shape.
-   **Do not use real credentials or secrets in source control**.
+   Copy `.env.example` to `.env` and provide your PostgreSQL connection string:
 
-### Neon deployment
+   ```env
+   ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=project_manager;Username=postgres;Password=postgres"
+   ```
 
-For production, keep the Neon connection string outside the repository and inject it as an environment variable:
+   The API also reads `appsettings.json` for `Jwt:*` settings. **Never commit real secrets.**
 
-```bash
-ConnectionStrings__DefaultConnection="<your-neon-connection-string>"
-ASPNETCORE_ENVIRONMENT=Production
-```
+4. **Apply migrations**
 
-If you are deploying with Docker, pass the same environment variable into the container. The API already reads `ConnectionStrings:DefaultConnection` through the normal ASP.NET Core configuration pipeline, so Neon works without code changes.
-
-Right now this is the only environment variable you need to start the API against Neon. The JWT values remain in the existing configuration and can be externalized later if you want a stricter production setup.
-
-Before publishing, run migrations against Neon with the same connection string:
-
-```bash
-dotnet ef database update --project src/Infrastructure --startup-project src/ProjectManagerAPI
-```
-
-### Docker deployment
-
-1. Create a local `.env` file from `.env.example` and paste your Neon connection string.
-2. Build and run the container:
-
-```bash
-docker compose up -d --build
-```
-
-3. Open the API on `http://localhost:8080`.
-
-The container does not include a database service because production uses Neon as the external PostgreSQL provider.
-
-4. Apply migrations:
    ```bash
    dotnet ef database update --project src/Infrastructure --startup-project src/ProjectManagerAPI
    ```
 
-5. Run the API:
+5. **Run the API**
+
    ```bash
    dotnet run --project src/ProjectManagerAPI
    ```
 
-6. Open Swagger (Development): `https://localhost:5001/swagger`
+   The API will be available at `https://localhost:5001` and Swagger UI at `https://localhost:5001/swagger`.
 
-## Authentication
+### Database & Migrations
 
-- `POST /api/auth/register` - Register and receive an access token.
-- `POST /api/auth/login` - Login and receive an access token.
+- **Add a migration** (after entity changes):
 
-Most endpoints require `Authorization: Bearer {token}`.
+  ```bash
+  dotnet ef migrations add <MigrationName> --project src/Infrastructure --startup-project src/ProjectManagerAPI
+  ```
 
-## API Endpoints
+- **Apply migrations** to the configured database:
 
-- **Projects**
-  - `GET /api/projects`
-  - `POST /api/projects`
-  - `PUT /api/projects/{id}`
-  - `DELETE /api/projects/{id}`
-  - `GET /api/projects/{id}/members`
-  - `POST /api/projects/{id}/members`
-  - `PUT /api/projects/{id}/members/role`
-  - `DELETE /api/projects/{id}/members`
+  ```bash
+  dotnet ef database update --project src/Infrastructure --startup-project src/ProjectManagerAPI
+  ```
 
-- **Tasks**
-  - `GET /api/projects/{projectId}/tasks`
-  - `GET /api/projects/{projectId}/tasks/{taskItemId}`
-  - `POST /api/projects/{projectId}/tasks`
-  - `PUT /api/projects/{projectId}/tasks/{taskItemId}`
-  - `DELETE /api/projects/{projectId}/tasks/{taskItemId}`
-  - `PUT /api/projects/{projectId}/tasks/{taskItemId}/assignee`
+### Docker
 
-- **Sprints**
-  - `GET /api/projects/{projectId}/sprints`
-  - `GET /api/projects/{projectId}/sprints/board`
-  - `GET /api/projects/{projectId}/sprints/{sprintId}`
-  - `GET /api/projects/{projectId}/sprints/{sprintId}/tasks`
-  - `POST /api/projects/{projectId}/sprints`
-  - `PUT /api/projects/{projectId}/sprints/{sprintId}`
-  - `DELETE /api/projects/{projectId}/sprints/{sprintId}`
-  - `PUT /api/projects/{projectId}/sprints/{sprintId}/tasks/{taskItemId}`
-  - `DELETE /api/projects/{projectId}/sprints/{sprintId}/tasks/{taskItemId}`
+The image is a multi-stage build that publishes a release build of the API and runs it on `aspnet:8.0`, exposing port `8080`.
 
-- **Task Comments**
-  - `GET /api/projects/{projectId}/tasks/{taskItemId}/comments`
-  - `POST /api/projects/{projectId}/tasks/{taskItemId}/comments`
-  - `PUT /api/projects/{projectId}/tasks/{taskItemId}/comments/{commentId}`
-  - `DELETE /api/projects/{projectId}/tasks/{taskItemId}/comments/{commentId}`
+1. Make sure `.env` contains a valid `ConnectionStrings__DefaultConnection`.
+2. Build and start the container:
 
-  **Task Items**
-  - `GET /api/task-items/by-projects`
+   ```bash
+   docker compose up -d --build
+   ```
 
-## Authorization Model
+3. The API will be available at `http://localhost:8081` (mapped to container port `8080`).
 
-- The API derives the acting user id from the JWT `NameIdentifier` claim.
-- For project-scoped resources (tasks and task comments), access is restricted to:
-  - the project owner, or
-  - a user with an active membership in the project.
-- Task comments extra rules:
-  - Update requires the acting user to be the comment author.
-  - Delete requires the acting user to be both:
-    - the comment author, and
-    - project member with role `Admin`.
+> The compose file does not include a database service — the container is designed to talk to an external PostgreSQL instance (Neon in production).
 
-## Configuration Notes
+### Deployment (Neon)
 
-- **Database**: `ConnectionStrings:DefaultConnection`
-- **Production database**: set `ConnectionStrings__DefaultConnection` in the environment for Neon
-- **JWT**: `Jwt:*` settings in `src/ProjectManagerAPI/appsettings.json`
-- **CORS**: Not configured yet (see roadmap).
+For serverless deployments on Neon, keep the connection string outside source control and inject it as an environment variable:
 
-## 🏗️ Project Structure
-The project follows a Clean Architecture approach with clear separation of concerns between layers:
-
-```
-src/
-├── Domain/                 # Entities, enums, and repository abstractions
-├── Application/            # DTOs, services, use-case logic, exceptions
-├── Infrastructure/         # EF Core DbContext, configurations, repositories, migrations
-└── ProjectManagerAPI/      # ASP.NET Core Web API (controllers, Program.cs)
+```bash
+export ConnectionStrings__DefaultConnection="<your-neon-connection-string>"
+export ASPNETCORE_ENVIRONMENT=Production
 ```
 
-## System Diagram (Current)
+The API reads the connection string through the standard ASP.NET Core configuration pipeline, so Neon works without any code changes. Apply migrations against Neon with the same `dotnet ef database update` command from the local setup.
 
-```mermaid
-flowchart TD
-  Client[Client App / Swagger / Postman]
+---
 
-  subgraph API[ProjectManagerAPI]
-    Program[Program.cs\nDI + Middleware + Auth]
-    Controllers[Controllers\nAuth / Projects / TaskItem / TaskComments]
-    Middleware[ExceptionHandlingMiddleware\nproblem+json responses]
-    Program --> Controllers
-    Program --> Middleware
-  end
+## Configuration
 
-  subgraph App[Application Layer]
-    Services[Services\nAuthService / ProjectService / TaskItemService / CommentService]
-    DTOs[DTOs + Validators\nFluentValidation]
-  end
+| Key                                            | Where                  | Notes                                                                  |
+|------------------------------------------------|------------------------|------------------------------------------------------------------------|
+| `ConnectionStrings:DefaultConnection`          | `appsettings.json`     | Local dev PostgreSQL connection string.                                |
+| `ConnectionStrings__DefaultConnection`         | Env var / Docker       | Override in production. Works with Neon.                               |
+| `Jwt:Issuer`                                   | `appsettings.json`     | JWT issuer claim.                                                      |
+| `Jwt:Audience`                                 | `appsettings.json`     | JWT audience claim.                                                    |
+| `Jwt:SecretKey`                                | `appsettings.json`     | HMAC signing key. **Use a long, random value in production.**          |
+| `Jwt:AccessTokenExpirationMinutes`             | `appsettings.json`     | Access token lifetime.                                                 |
+| CORS allowed origins                           | `Program.cs`           | `http://localhost:5173` and the deployed Vercel frontend.              |
 
-  subgraph Security[Security Layer]
-    TokenService[JwtTokenService]
-    PasswordHasher[AspNetPasswordHasher]
-    JwtOptions[JwtOptions]
-  end
+---
 
-  subgraph Domain[Domain Layer]
-    Entities[Entities\nUser / Project / TaskItem / Comment / UserProject]
-    Abstractions[Repository Abstractions\nIProjectRepository / ITaskItemRepository / IUserRepository / ...]
-    Enums[Enums\nTaskState / TaskPriority / UserRol]
-  end
+## Running the Tests
 
-  subgraph Infra[Infrastructure Layer]
-    DbContext[ProjectManagerContext]
-    Repositories[Repositories\nProject / TaskItem / Comment / User / UserProject]
-    Config[EF Configurations + Migrations]
-    Db[(PostgreSQL)]
-    DbContext --> Repositories
-    Repositories --> Db
-    Config --> DbContext
-  end
+Unit tests cover every service and controller, using the AAA pattern, Moq for collaborators, and FluentAssertions for readability.
 
-  Client -->|HTTP + JWT| Controllers
-  Controllers --> Services
-  Controllers --> DTOs
-  Services --> Abstractions
-  Services --> Entities
-  Services --> Enums
-  Services --> TokenService
-  Services --> PasswordHasher
-  TokenService --> JwtOptions
-  Abstractions --> Repositories
-  Repositories --> DbContext
+```bash
+dotnet test ProjectManagerAPI.sln
 ```
 
-## Development
+To collect coverage locally:
 
-- Restore: `dotnet restore ProjectManagerAPI.sln`
-- Build: `dotnet build ProjectManagerAPI.sln`
-- Run: `dotnet run --project src/ProjectManagerAPI`
-- Migrations:
-  - Add: `dotnet ef migrations add <Name> --project src/Infrastructure --startup-project src/ProjectManagerAPI`
-  - Update: `dotnet ef database update --project src/Infrastructure --startup-project src/ProjectManagerAPI`
+```bash
+dotnet test --collect:"XPlat Code Coverage" --results-directory ./TestResults
+```
 
-## Roadmap / Next Implementations
+---
 
-- **Historial / Audit Log**: Add a history entity to register user actions within a project (who/what/when).
-- **Frontend**: Implement a frontend client (auth, projects, tasks, comments).
-- **CORS + HTTPS**: Add CORS policies for frontend origins and ensure correct local/prod HTTPS behavior.
-- **FastAPI microservice**: In the future, I want to create a small microservice to implement AI (like a chatbot or something similar) in this project using Python FastAPI to practice microservices architecture.
-- **Docker**: Prepare container to deploy the backend to live production.
-- **Render**: Backend deploy platform.
+## CI & Code Coverage
 
-## 🧪 Testing 
+GitHub Actions runs on every push and pull request to `dev` and `main` (`.github/workflows/dotnet.yml`):
 
-Implemented unit tests for each service and controller in this proyect
+1. Restore, build, and test the solution on `ubuntu-latest` with .NET 8.0.x.
+2. Generate an HTML and Markdown coverage report with **ReportGenerator**.
+3. Publish coverage indicators with **CodeCoverageSummary**.
+4. **Sticky PR comment bot** posts the coverage summary on every pull request and keeps it in sync across pushes.
 
-- Unit testing with xUnit using AAA (Arrange, Act, Assert) pattern 
-- Mocking with Moq
-- Using ReportGenerator and CodeCoverageSummary in github actions, added test coverage percentage in pull requests
+See `.github/workflows/dotnet.yml` for the full configuration.
 
-Next implementation is add integration tests
+---
 
-## 🧠 Key Learnings
+## API Reference
 
-- Applying Clean Architecture in a real-world backend project
-- Designing authorization logic for shared resources
-- Structuring scalable APIs with service and repository layers
-- Integrating AI tools into the development workflow
-- Improving problem-solving and iteration speed using AI
+All routes are prefixed with `/api`. Most endpoints require `Authorization: Bearer {token}`.
 
-## 🎯 Purpose of the Project
+### Auth
 
-This project was built to move beyond simple CRUD applications and simulate a real-world backend system with proper architecture, authorization rules, and scalability in mind.
+| Method | Route                | Description                                  |
+|--------|----------------------|----------------------------------------------|
+| POST   | `/api/auth/register` | Register a new user, returns an access token |
+| POST   | `/api/auth/login`    | Log in, returns an access token              |
 
-It also serves as a playground to experiment with AI-assisted development workflows.
+### Users
+
+| Method | Route               | Description                                             |
+|--------|---------------------|---------------------------------------------------------|
+| GET    | `/api/users/me/stats` | Returns current user's project count, plan, and limit |
+
+### Projects
+
+| Method | Route                                       | Description                       |
+|--------|---------------------------------------------|-----------------------------------|
+| GET    | `/api/projects`                             | List projects for the current user |
+| POST   | `/api/projects`                             | Create a project                   |
+| PUT    | `/api/projects/{id}`                        | Update a project                   |
+| DELETE | `/api/projects/{id}`                        | Delete a project                   |
+| GET    | `/api/projects/{id}/members`                | List project members               |
+| POST   | `/api/projects/{id}/members`                | Add a project member               |
+| DELETE | `/api/projects/{id}/members/{userId}`       | Remove a project member            |
+| PUT    | `/api/projects/{id}/members/{userId}/role`  | Update a member's role             |
+
+### Tasks
+
+| Method | Route                                                            | Description                                    |
+|--------|------------------------------------------------------------------|------------------------------------------------|
+| GET    | `/api/projects/{projectId}/tasks`                                | List tasks in a project (with optional filters)|
+| GET    | `/api/projects/{projectId}/tasks/{taskItemId}`                   | Get a task by ID                               |
+| POST   | `/api/projects/{projectId}/tasks`                                | Create a task                                  |
+| PUT    | `/api/projects/{projectId}/tasks/{taskItemId}`                   | Update a task                                  |
+| DELETE | `/api/projects/{projectId}/tasks/{taskItemId}`                   | Delete a task                                  |
+| PUT    | `/api/projects/{projectId}/tasks/{taskItemId}/assignee`          | Assign a task to a project member              |
+| GET    | `/api/task-items/by-projects`                                    | List tasks grouped by project, with filters    |
+
+### Sprints
+
+| Method | Route                                                                       | Description                                              |
+|--------|-----------------------------------------------------------------------------|----------------------------------------------------------|
+| GET    | `/api/projects/{projectId}/sprints`                                         | List sprints in a project                                |
+| GET    | `/api/projects/{projectId}/sprints/board`                                   | Sprint board: sprints with tasks, plus the backlog       |
+| GET    | `/api/projects/{projectId}/sprints/{sprintId}`                              | Get a sprint by ID                                       |
+| GET    | `/api/projects/{projectId}/sprints/{sprintId}/tasks`                        | Get a sprint with its tasks                              |
+| POST   | `/api/projects/{projectId}/sprints`                                         | Create a sprint                                          |
+| PUT    | `/api/projects/{projectId}/sprints/{sprintId}`                              | Update a sprint                                          |
+| DELETE | `/api/projects/{projectId}/sprints/{sprintId}`                              | Delete a sprint (tasks move to the backlog)              |
+| PUT    | `/api/projects/{projectId}/sprints/{sprintId}/tasks/{taskItemId}`           | Move a task into a sprint                                |
+| DELETE | `/api/projects/{projectId}/sprints/{sprintId}/tasks/{taskItemId}`           | Move a task out of a sprint (back to the backlog)        |
+
+### Task Comments
+
+| Method | Route                                                                                | Description                              |
+|--------|--------------------------------------------------------------------------------------|------------------------------------------|
+| GET    | `/api/projects/{projectId}/tasks/{taskItemId}/comments`                              | List comments on a task                  |
+| POST   | `/api/projects/{projectId}/tasks/{taskItemId}/comments`                              | Add a comment                            |
+| PUT    | `/api/projects/{projectId}/tasks/{taskItemId}/comments/{commentId}`                  | Update a comment (author only)           |
+| DELETE | `/api/projects/{projectId}/tasks/{taskItemId}/comments/{commentId}`                  | Delete a comment (author + Admin)        |
+
+---
+
+## Project Structure
+
+```
+ProjectManagerBackend/
+├── src/
+│   ├── Domain/                 # Entities, enums, repository abstractions
+│   ├── Application/            # DTOs, services, validators, exceptions
+│   ├── Infrastructure/         # EF Core DbContext, configurations, repositories, migrations
+│   ├── Security/               # JWT token service, password hashing
+│   └── ProjectManagerAPI/      # ASP.NET Core Web API (controllers, Program.cs, options, middleware)
+├── tests/
+│   └── ProjectManager.Tests/   # xUnit unit tests for services and controllers
+├── .github/workflows/          # CI: build, test, coverage report, PR comment bot
+├── docker-compose.yml
+├── Dockerfile
+├── ProjectManagerAPI.sln
+└── README.md
+```
+
+---
+
+## AI-Assisted Development
+
+This project was intentionally built with AI tools woven into the day-to-day workflow, not as an afterthought. The goal was to **move faster and learn deeper**, treating AI as a co-pilot for architecture decisions, refactors, and documentation rather than as a black box.
+
+Tools and approaches explored:
+
+- **Microsoft Learn MCP Server** — for canonical .NET and ASP.NET Core references.
+- **GitHub MCP Server** — to automate PR creation and review hygiene.
+- **OpenCode-driven experimentation** — to iterate on architecture, refactors, and tests faster.
+
+The focus areas were:
+
+- Faster iteration cycles on new features.
+- Better understanding of Clean Architecture boundaries.
+- Guided learning on EF Core modeling and authorization patterns.
+
+---
+
+## Roadmap
+
+- **Audit log / history** — track who did what and when inside a project.
+- **Frontend** — auth, projects, tasks, and comments client.
+- **CORS + HTTPS hardening** — production-grade CORS policy and HTTPS termination.
+- **WebLLM** — small AI feature for task automatization using open source web models (in Frontend). 
+- **Production deployment** — Render (API) + Neon (DB) pipeline.
+
+---
+
+## What I Learned
+
+- Applying **Clean Architecture** in a real-world backend, not just a toy project: keeping `Domain` free of external dependencies and pushing I/O to the edges.
+- Designing **authorization for shared resources** — owner vs. member vs. role, and layering rules (e.g. comment edit/delete).
+- Modeling **agile concepts** (sprints, backlog, task board) on top of relational data with EF Core.
+- Validating inputs consistently with **FluentValidation** and returning `application/problem+json` errors.
+- Keeping tests maintainable: **xUnit + Moq + AAA** at the service and controller level.
+- Treating AI as a workflow tool, with deliberate choices about when to trust it and when to verify.
+
+---
 
 ## Contributing
 
-If you are interested in creating new modules for this small project, you are welcome to contribute!
+This is a portfolio project, but contributions are welcome. To get started:
 
 1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature/YourFeature`).
-3. Commit your changes (`git commit -am 'Add some feature'`).
-4. Push to the branch dev (`git push origin feature/YourFeature`).
-5. Create a Pull Request.
+2. Create a feature branch: `git checkout -b feature/your-feature`.
+3. Commit your changes: `git commit -am 'Add some feature'`.
+4. Push the branch: `git push origin feature/your-feature`.
+5. Open a Pull Request against `dev`.
+
+Please make sure `dotnet build` and `dotnet test` pass before requesting a review.
+
+---
+
+## License
+
+This project is released for portfolio and educational purposes. You are free to read, learn from, and adapt it. If you plan to redistribute or build on top of it, please add appropriate attribution.
+
+> _Last reviewed: v1.1.2_
