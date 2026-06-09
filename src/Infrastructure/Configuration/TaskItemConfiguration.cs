@@ -35,6 +35,8 @@ namespace Infrastructure.Configuration
             builder.Property(t => t.CreatedAt)
                 .IsRequired();
 
+            builder.Property(t => t.StartAt);
+
             builder.Property(t => t.CompletedAt);
 
             builder.Property(t => t.State)

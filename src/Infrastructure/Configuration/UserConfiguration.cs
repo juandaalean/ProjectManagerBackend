@@ -28,7 +28,16 @@ namespace Infrastructure.Configuration
 
             builder.Property(u => u.Rol)
                 .HasConversion<string>();
-            
+
+            builder.Property(u => u.Plan)
+                .IsRequired()
+                .HasMaxLength(10)
+                .HasDefaultValue("free");
+
+            builder.Property(u => u.ProjectLimit)
+                .IsRequired()
+                .HasDefaultValue(3);
+
         }
     }
 }

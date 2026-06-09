@@ -106,6 +106,7 @@ public class TaskItemService(
             Title = request.Title,
             Description = request.Description,
             CreatedAt = DateTime.UtcNow,
+            StartAt = request.StartAt,
             CompletedAt = request.CompletedAt,
             State = request.TaskState,
             Priority = request.TaskPriority,
@@ -264,9 +265,11 @@ public class TaskItemService(
                 request.Title is not null ||
                 request.Description is not null ||
                 request.CreatedAt.HasValue ||
+                request.StartAt.HasValue ||
                 request.CompletedAt.HasValue ||
                 request.SprintId.HasValue ||
-                request.ClearSprint;
+                request.ClearSprint ||
+                request.ClearCompletedAt;
 
             if (tryingToChangeRestrictedFields)
             {
@@ -315,7 +318,16 @@ public class TaskItemService(
             taskItem.CreatedAt = request.CreatedAt.Value;
         }
 
-        if (request.CompletedAt.HasValue)
+        if (request.StartAt.HasValue)
+        {
+            taskItem.StartAt = request.StartAt.Value;
+        }
+
+        if (request.ClearCompletedAt)
+        {
+            taskItem.CompletedAt = null;
+        }
+        else if (request.CompletedAt.HasValue)
         {
             taskItem.CompletedAt = request.CompletedAt.Value;
         }
@@ -406,6 +418,7 @@ public class TaskItemService(
         taskItem.AssignedUserId,
         taskItem.CreatedAt,
         taskItem.CompletedAt,
+        taskItem.StartAt,
         taskItem.SprintId
     );
 

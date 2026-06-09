@@ -367,6 +367,7 @@ public class SprintService(
             taskItem.AssignedUserId,
             taskItem.CreatedAt,
             taskItem.CompletedAt,
+            taskItem.StartAt,
             taskItem.SprintId
         );
 }
