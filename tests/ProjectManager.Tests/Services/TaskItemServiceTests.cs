@@ -44,7 +44,7 @@ public class TaskItemServiceTests
 
         var service = CreateService();
         var completedAt = DateTime.UtcNow.AddDays(2);
-        var request = new CreateTaskItemRequest(assignedUserId, "Task", "Desc", TaskPriority.High, TaskState.Active, completedAt);
+        var request = new CreateTaskItemRequest(assignedUserId, "Task", "Desc", TaskPriority.High, TaskState.Active, null, completedAt);
 
         var result = await service.CreateTaskItemAsync(projectId, request, actorUserId, CancellationToken.None);
 
